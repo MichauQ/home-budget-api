@@ -1,19 +1,32 @@
 package io.github.michauq.homebudget.transaction;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
 public class TransactionController {
 
+    private final TransactionService transactionService;
+
+    public TransactionController(TransactionService transactionService) {
+    this.transactionService = transactionService;
+    }
+
+
     @GetMapping
     public List<TransactionResponse> getTransactions(){
-        TransactionResponse transactionResponse = new TransactionResponse(1L,"Jedzenie na miescie", new BigDecimal("25.50"));
-        return List.of(transactionResponse);
+        return transactionService.getTransactions();
+    }
+
+    @PostMapping
+    public TransactionResponse createTransaction(@RequestBody CreateTransactionRequest request){
+        return transactionService.createTransaction(request);
+
     }
 }

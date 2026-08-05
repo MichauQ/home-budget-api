@@ -7,8 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-public record TransactionResponse(
-        Long id,
+public record CreateTransactionRequest(
         String name,
         BigDecimal amount,
         TransactionType type,
@@ -16,4 +15,5 @@ public record TransactionResponse(
         LocalDate transactionDate,
         LocalTime transactionTime
 ) {
+
 }
