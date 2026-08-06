@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -11,9 +13,17 @@ public class TransactionService {
 
     private final AtomicLong idGenerator = new AtomicLong(0);
     private final List<TransactionResponse> transactionResponseList = new ArrayList<>();
+
     public List<TransactionResponse> getTransactions(){
         return List.copyOf(transactionResponseList);
     }
+
+    public Optional<TransactionResponse> getTransaction(Long id){
+        return transactionResponseList.stream()
+                .filter(transactionResponse -> Objects.equals(transactionResponse.id(), id))
+                .findFirst();
+    }
+
 
     public TransactionResponse createTransaction(CreateTransactionRequest  request){
         Long id = generateId();
