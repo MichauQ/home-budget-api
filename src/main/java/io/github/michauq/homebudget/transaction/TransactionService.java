@@ -60,4 +60,8 @@ public class TransactionService {
     private Long generateId(){
         return idGenerator.incrementAndGet();
     }
+
+    public boolean deleteTransaction(Long id){
+        return transactionResponseList.removeIf(transactionResponse -> Objects.equals(transactionResponse.id(), id));
+    }
 }
