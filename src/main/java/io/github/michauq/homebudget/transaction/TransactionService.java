@@ -2,10 +2,7 @@ package io.github.michauq.homebudget.transaction;
 
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -22,6 +19,26 @@ public class TransactionService {
         return transactionResponseList.stream()
                 .filter(transactionResponse -> Objects.equals(transactionResponse.id(), id))
                 .findFirst();
+    }
+
+    public Optional<TransactionResponse> updateTransaction(Long id, CreateTransactionRequest request){
+        for (int i = 0; i < transactionResponseList.size(); i++) {
+            TransactionResponse transaction = transactionResponseList.get(i);
+            if(Objects.equals(transaction.id(), id)){
+                TransactionResponse updatedTransaction = new TransactionResponse(
+                        id,
+                        request.name(),
+                        request.amount(),
+                        request.type(),
+                        request.category(),
+                        request.transactionDate(),
+                        request.transactionTime()
+                );
+                transactionResponseList.set(i, updatedTransaction);
+                return Optional.of(updatedTransaction);
+            }
+        }
+        return Optional.empty();
     }
 
 
