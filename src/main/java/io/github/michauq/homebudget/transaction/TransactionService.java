@@ -3,65 +3,91 @@ package io.github.michauq.homebudget.transaction;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class TransactionService {
 
-    private final AtomicLong idGenerator = new AtomicLong(0);
-    private final List<TransactionResponse> transactionResponseList = new ArrayList<>();
+    private final TransactionRepository transactionRepository;
+
+    public TransactionService(TransactionRepository transactionRepository) {
+        this.transactionRepository = transactionRepository;
+    }
 
     public List<TransactionResponse> getTransactions(){
-        return List.copyOf(transactionResponseList);
+        List<Transaction> transactions = transactionRepository.findAll();
+        return transactions.stream()
+                .map(transaction -> new TransactionResponse(
+                        transaction.id,
+                        transaction.name,
+                        transaction.amount,
+                        transaction.type,
+                        transaction.category,
+                        transaction.transactionDate,
+                        transaction.transactionTime))
+                .toList();
     }
 
     public Optional<TransactionResponse> getTransaction(Long id){
-        return transactionResponseList.stream()
-                .filter(transactionResponse -> Objects.equals(transactionResponse.id(), id))
-                .findFirst();
+        Optional<Transaction> foundTransaction = transactionRepository.findById(id);
+        return foundTransaction.map(transaction -> new TransactionResponse(
+                transaction.id,
+                transaction.name,
+                transaction.amount,
+                transaction.type,
+                transaction.category,
+                transaction.transactionDate,
+                transaction.transactionTime
+        ));
     }
 
     public Optional<TransactionResponse> updateTransaction(Long id, CreateTransactionRequest request){
-        for (int i = 0; i < transactionResponseList.size(); i++) {
-            TransactionResponse transaction = transactionResponseList.get(i);
-            if(Objects.equals(transaction.id(), id)){
-                TransactionResponse updatedTransaction = new TransactionResponse(
-                        id,
-                        request.name(),
-                        request.amount(),
-                        request.type(),
-                        request.category(),
-                        request.transactionDate(),
-                        request.transactionTime()
-                );
-                transactionResponseList.set(i, updatedTransaction);
-                return Optional.of(updatedTransaction);
-            }
-        }
-        return Optional.empty();
+        return transactionRepository.findById(id)
+                .map(transaction ->{
+                        transaction.setName(request.name());
+                        transaction.setAmount(request.amount());
+                        transaction.setType(request.type());
+                        transaction.setCategory(request.category());
+                        transaction.setTransactionDate(request.transactionDate());
+                        transaction.setTransactionTime(request.transactionTime());
+                        Transaction savedTransaction = transactionRepository.save(transaction);
+                        return new TransactionResponse(
+                                savedTransaction.getId(),
+                                savedTransaction.getName(),
+                                savedTransaction.getAmount(),
+                                savedTransaction.getType(),
+                                savedTransaction.getCategory(),
+                                savedTransaction.getTransactionDate(),
+                                savedTransaction.getTransactionTime());
+                });
     }
 
 
-    public TransactionResponse createTransaction(CreateTransactionRequest  request){
-        Long id = generateId();
-        TransactionResponse transactionResponse = new TransactionResponse(
-                id,
+    public TransactionResponse createTransaction(CreateTransactionRequest  request){;
+        Transaction transaction = new Transaction(
                 request.name(),
                 request.amount(),
                 request.type(),
                 request.category(),
                 request.transactionDate(),
                 request.transactionTime());
-        transactionResponseList.add(transactionResponse);
-    return transactionResponse;
+        Transaction savedTransaction = transactionRepository.save(transaction);
+    return new TransactionResponse(
+            savedTransaction.id,
+            savedTransaction.name,
+            savedTransaction.amount,
+            savedTransaction.type,
+            savedTransaction.category,
+            savedTransaction.transactionDate,
+            savedTransaction.transactionTime
+    );
     }
 
-    // helper method to temporarily generate incremental ID
-    private Long generateId(){
-        return idGenerator.incrementAndGet();
-    }
+    public boolean deleteTransaction(Long id) {
+        if (!transactionRepository.existsById(id)) {
+            return false;
+        }
 
-    public boolean deleteTransaction(Long id){
-        return transactionResponseList.removeIf(transactionResponse -> Objects.equals(transactionResponse.id(), id));
+        transactionRepository.deleteById(id);
+        return true;
     }
 }

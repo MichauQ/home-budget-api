@@ -7,5 +7,6 @@ public enum TransactionCategory {
     HOUSING,
     HEALTH,
     ENTERTAINMENT,
+    GROCERIES,
     OTHER
 }
