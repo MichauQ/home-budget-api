@@ -62,7 +62,7 @@ public class TransactionService {
     }
 
 
-    public TransactionResponse createTransaction(CreateTransactionRequest  request){;
+    public TransactionResponse createTransaction(CreateTransactionRequest  request){
         Transaction transaction = new Transaction(
                 request.name(),
                 request.amount(),
