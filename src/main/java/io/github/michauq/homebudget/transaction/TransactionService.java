@@ -1,7 +1,9 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -11,6 +13,12 @@ public class TransactionService {
 
     public TransactionService(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
+    }
+
+    public TransactionSummaryResponse getBalanceSummary(){
+        BigDecimal income = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.INCOME)).orElse(BigDecimal.ZERO);
+        BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).orElse(BigDecimal.ZERO);
+        return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
 
     public List<TransactionResponse> getTransactions(){

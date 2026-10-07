@@ -17,6 +17,12 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    @GetMapping("/summary")
+    public ResponseEntity<TransactionSummaryResponse> getBalanceSummary(){
+        TransactionSummaryResponse summaryResponse = transactionService.getBalanceSummary();
+        return ResponseEntity.ok(summaryResponse);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TransactionResponse> getTransaction(@PathVariable Long id){
         return transactionService.getTransaction(id)

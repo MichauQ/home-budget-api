@@ -29,6 +29,36 @@ class TransactionServiceTest {
     private TransactionService transactionService;
 
     @Test
+    void shouldReturnCorrectBalanceSummary(){
+        //given
+        when(transactionRepository.sumAmountByType(TransactionType.INCOME)).thenReturn(BigDecimal.valueOf(150));
+        when(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).thenReturn(BigDecimal.valueOf(30));
+        //when
+        TransactionSummaryResponse result = transactionService.getBalanceSummary();
+        //then
+        assertEquals(BigDecimal.valueOf(150),result.income());
+        assertEquals(BigDecimal.valueOf(30),result.expenses());
+        assertEquals(BigDecimal.valueOf(120),result.balance());
+        verify(transactionRepository).sumAmountByType(TransactionType.INCOME);
+        verify(transactionRepository).sumAmountByType(TransactionType.EXPENSE);
+    }
+
+    @Test
+    void shouldReturnEmptyBalanceSummary(){
+        //given
+        when(transactionRepository.sumAmountByType(TransactionType.INCOME)).thenReturn(null);
+        when(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).thenReturn(null);
+        //when
+        TransactionSummaryResponse result = transactionService.getBalanceSummary();
+        //then
+        assertEquals(BigDecimal.ZERO,result.income());
+        assertEquals(BigDecimal.ZERO,result.expenses());
+        assertEquals(BigDecimal.ZERO,result.balance());
+        verify(transactionRepository).sumAmountByType(TransactionType.INCOME);
+        verify(transactionRepository).sumAmountByType(TransactionType.EXPENSE);
+    }
+
+    @Test
     void shouldCreateTransaction(){
         //given
         CreateTransactionRequest testCreateRequestData = new CreateTransactionRequest(

@@ -27,6 +27,42 @@ class TransactionRepositoryTest {
     private TestEntityManager testEntityManager;
 
     @Test
+    void shouldReturnSumOfIncome(){
+        //given
+        Transaction testIncome1 = new Transaction(
+                "Test Income 1",
+                BigDecimal.valueOf(100),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,7),
+                null
+        );
+        Transaction testIncome2 = new Transaction(
+                "Test Income 2",
+                BigDecimal.valueOf(50),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,7),
+                null
+        );
+        Transaction testExpense = new Transaction(
+                "Test Expense",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,7),
+                null
+        );
+        transactionRepository.saveAndFlush(testIncome1);
+        transactionRepository.saveAndFlush(testIncome2);
+        transactionRepository.saveAndFlush(testExpense);
+        //when
+        BigDecimal result = transactionRepository.sumAmountByType(TransactionType.INCOME);
+        //then
+        assertEquals(0,new BigDecimal("150").compareTo(result));
+    }
+
+    @Test
     void shouldSaveTransactionAndReadIt(){
         //given
         Transaction testTransaction = new Transaction(

@@ -30,6 +30,24 @@ class TransactionControllerTest {
     private TransactionService transactionService;
 
     @Test
+    void shouldReturnTransactionSummary() throws Exception {
+        //given
+        TransactionSummaryResponse summaryResponse = new TransactionSummaryResponse(
+                BigDecimal.valueOf(150),
+                BigDecimal.valueOf(30),
+                BigDecimal.valueOf(120)
+        );
+        when(transactionService.getBalanceSummary()).thenReturn(summaryResponse);
+        //when
+        mockMvc.perform(get("/api/transactions/summary"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.income").value(BigDecimal.valueOf(150)))
+                .andExpect(jsonPath("$.expenses").value(BigDecimal.valueOf(30)))
+                .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(120)));
+    }
+
+    @Test
     void shouldReturnTransactionWhenExists() throws Exception {
         //given
         TransactionResponse response = new TransactionResponse(
