@@ -103,7 +103,7 @@ class TransactionControllerTest {
                         null
                 )
         );
-        when(transactionService.getTransactions()).thenReturn(response);
+        when(transactionService.getTransactions(null)).thenReturn(response);
         //when
         mockMvc.perform(get("/api/transactions"))
                 //then
@@ -112,7 +112,38 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Controller transaction test data2"));
-        verify(transactionService).getTransactions();
+        verify(transactionService).getTransactions(null);
+    }
+    @Test
+    void shouldReturnTransactionsFilteredByDate() throws Exception {
+        //given
+        LocalDate dateParam = LocalDate.of(2026,10,5);
+        List<TransactionResponse> response = List.of(new TransactionResponse(
+                        1L,
+                        "Controller transaction test data1",
+                        BigDecimal.valueOf(100),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026,10,5),
+                        null
+                ));
+        when(transactionService.getTransactions(dateParam)).thenReturn(response);
+        //when
+        mockMvc.perform(get("/api/transactions?date=2026-10-05"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
+                .andExpect(jsonPath("$[0].transactionDate").value(dateParam.toString()));
+        verify(transactionService).getTransactions(dateParam);
+    }
+    @Test
+    void shouldReturnBadRequestWhenDateParameterIsInvalid() throws Exception {
+        //when
+        mockMvc.perform(get("/api/transactions?date=abc"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
     }
 
     @Test

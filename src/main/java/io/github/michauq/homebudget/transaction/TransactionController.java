@@ -1,10 +1,12 @@
 package io.github.michauq.homebudget.transaction;
 
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -32,8 +34,11 @@ public class TransactionController {
 
 
     @GetMapping
-    public List<TransactionResponse> getTransactions(){
-        return transactionService.getTransactions();
+    public List<TransactionResponse> getTransactions(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date){
+        return transactionService.getTransactions(date);
     }
 
     @PostMapping

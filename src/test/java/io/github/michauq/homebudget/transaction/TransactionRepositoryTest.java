@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,5 +82,55 @@ class TransactionRepositoryTest {
         assertNotNull(saveResult.getId());
         assertTrue(findResult.isPresent());
         assertEquals("Test Transaction", findResult.get().getName());
+    }
+    @Test
+    void shouldFindOnlyTransactionsFromSpecifiedDate(){
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction 1",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction 2",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,5),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction 3",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,5),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5));
+        //then
+        assertEquals(2,result.size());
+        List<String> names = result.stream()
+                .map(Transaction::getName)
+                .toList();
+        assertTrue(names.contains("Test Transaction 2"));
+        assertTrue(names.contains("Test Transaction 3"));
+        assertTrue(result.stream()
+                .allMatch(transaction ->
+                        transaction.getTransactionDate().equals(LocalDate.of(2026, 10, 5))));
+        assertTrue(result.stream()
+                .noneMatch(transaction ->
+                        transaction.getName().equals("Test Transaction 1")));
+    }
+    @Test
+    void shouldReturnEmptyListWhenNoTransactionsMatchDate(){
+        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5));
+        assertTrue(result.isEmpty());
     }
 }

@@ -139,7 +139,7 @@ class TransactionServiceTest {
                 null));
         when(transactionRepository.findAll()).thenReturn(testFindAllData);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions();
+        List<TransactionResponse> result = transactionService.getTransactions(null);
         // then
         assertEquals(2, result.size());
         assertEquals("Test Transaction1",result.get(0).name());
@@ -154,11 +154,41 @@ class TransactionServiceTest {
         verify(transactionRepository).findAll();
     }
     @Test
+    void shouldReturnTransactionsFilteredByDate(){
+        //given
+        LocalDate dateParam = LocalDate.of(2026,10,5);
+        List<Transaction> transactionsForDate = new ArrayList<>();
+        transactionsForDate.add(new Transaction("Test Transaction1",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 5),
+                null));
+        transactionsForDate.add(new Transaction("Test Transaction2",
+                BigDecimal.valueOf(35),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 5),
+                null));
+        when(transactionRepository.findByTransactionDate(dateParam)).thenReturn(transactionsForDate);
+        //when
+        List<TransactionResponse> result = transactionService.getTransactions(dateParam);
+        //then
+        assertEquals(2, result.size());
+        assertEquals("Test Transaction1",result.get(0).name());
+        assertEquals(LocalDate.of(2026, 10, 5),result.get(0).transactionDate());
+        assertEquals("Test Transaction2",result.get(1).name());
+        assertEquals(LocalDate.of(2026, 10, 5),result.get(1).transactionDate());
+        verify(transactionRepository).findByTransactionDate(dateParam);
+        verify(transactionRepository,never()).findAll();
+    }
+
+    @Test
     void shouldReturnEmptyListWhenNoTransactionsExist(){
         // given
         when(transactionRepository.findAll()).thenReturn(new ArrayList<>());
         // when
-        List<TransactionResponse> result = transactionService.getTransactions();
+        List<TransactionResponse> result = transactionService.getTransactions(null);
         // then
         assertTrue(result.isEmpty());
         verify(transactionRepository).findAll();
