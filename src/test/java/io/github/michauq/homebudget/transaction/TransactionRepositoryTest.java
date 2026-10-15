@@ -2,6 +2,7 @@ package io.github.michauq.homebudget.transaction;
 
 import io.github.michauq.homebudget.transaction.enums.TransactionCategory;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -11,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -132,5 +134,180 @@ class TransactionRepositoryTest {
     void shouldReturnEmptyListWhenNoTransactionsMatchDate(){
         List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5));
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldReturnOnlyTransactionsWithinDateRange() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction before range",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction 'from' border",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction 'to' border",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction4 = new Transaction(
+                "Test Transaction after range",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,11,5),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31));
+        //then
+        assertEquals(2,result.size());
+        List<String> names = result.stream()
+                .map(Transaction::getName)
+                .toList();
+        assertTrue(names.contains("Test Transaction 'from' border"));
+        assertTrue(names.contains("Test Transaction 'to' border"));
+        assertTrue(result.stream()
+                .allMatch(transaction ->
+                        !transaction.getTransactionDate().isBefore(LocalDate.of(2026,10,1))
+                                && !transaction.getTransactionDate().isAfter(LocalDate.of(2026,10,31))));
+    }
+    @Test
+    void shouldReturnTransactionsWhenDateRangeIsSingleDay() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test single day Transaction",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        transactionRepository.saveAndFlush(testTransaction1);
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,1));
+        //then
+        assertEquals(1, result.size());
+        assertEquals("Test single day Transaction", result.getFirst().getName());
+    }
+    @Test
+    void shouldReturnEmptyListWhenNoTransactionsMatchDateRange() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction after range",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,11,5),
+                null
+        );
+        transactionRepository.saveAndFlush(testTransaction1);
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31));
+        //then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldReturnTransactionsOnOrAfterGivenDate() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction before border",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,9),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction on border",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction after border",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDateGreaterThanEqual(LocalDate.of(2026, 10, 15));
+        // then
+        assertEquals(2,result.size());
+        List<String> names = result.stream()
+                .map(Transaction::getName)
+                .toList();
+        assertTrue(names.contains("Test Transaction on border"));
+        assertTrue(names.contains("Test Transaction after border"));
+        assertTrue(result.stream()
+                .noneMatch(transaction ->
+                        transaction.getTransactionDate().isBefore(LocalDate.of(2026,10,15))));
+
+    }
+    @Test
+    void shouldReturnTransactionsOnOrBeforeGivenDate() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction before border",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,9),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction on border",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction after border",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTransactionDateLessThanEqual(LocalDate.of(2026, 10, 15));
+        // then
+        assertEquals(2,result.size());
+        List<String> names = result.stream()
+                .map(Transaction::getName)
+                .toList();
+        assertTrue(names.contains("Test Transaction on border"));
+        assertTrue(names.contains("Test Transaction before border"));
+        assertTrue(result.stream()
+                .noneMatch(transaction ->
+                        transaction.getTransactionDate().isAfter(LocalDate.of(2026,10,15))));
     }
 }

@@ -103,7 +103,7 @@ class TransactionControllerTest {
                         null
                 )
         );
-        when(transactionService.getTransactions(null)).thenReturn(response);
+        when(transactionService.getTransactions(null,null)).thenReturn(response);
         //when
         mockMvc.perform(get("/api/transactions"))
                 //then
@@ -112,7 +112,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Controller transaction test data2"));
-        verify(transactionService).getTransactions(null);
+        verify(transactionService).getTransactions(null,null);
     }
     @Test
     void shouldReturnTransactionsFilteredByDate() throws Exception {
@@ -271,4 +271,186 @@ class TransactionControllerTest {
                 .andExpect(status().isNotFound());
         verify(transactionService).deleteTransaction(999L);
     }
+    @Test
+    void shouldReturnBadRequestWhenDateAndFromAreProvided() throws Exception {
+        //when
+        mockMvc.perform(get("/api/transactions")
+                .param("date", "2026-10-15")
+                .param("from", "2026-10-01"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
+    }
+    @Test
+    void shouldReturnBadRequestWhenDateAndToAreProvided() throws Exception {
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("date", "2026-10-15")
+                        .param("to", "2026-10-18"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
+    }
+    @Test
+    void shouldReturnBadRequestWhenFromIsAfterTo() throws Exception {
+        //given
+        LocalDate from = LocalDate.of(2026,10,31);
+        LocalDate to = LocalDate.of(2026,10,15);
+        when(transactionService.getTransactions(from, to)).thenThrow(IllegalArgumentException.class);
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("from", "2026-10-31")
+                        .param("to", "2026-10-15"))
+                //then
+                .andExpect(status().isBadRequest());
+        verify(transactionService).getTransactions(from,to);
+    }
+    @Test
+    void shouldReturnTransactionsWithinDateRange() throws Exception {
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        LocalDate to = LocalDate.of(2026,10,31);
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                1L,
+                "Transaction within range 1",
+                BigDecimal.valueOf(25),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 2),
+                null),
+                new TransactionResponse(
+                2L,
+                "Transaction within range 2",
+                BigDecimal.valueOf(25),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 17),
+                null));
+        when(transactionService.getTransactions(from, to)).thenReturn(testTransactions);
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("from", "2026-10-01")
+                        .param("to", "2026-10-31"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(from,to);
+    }
+    @Test
+    void shouldReturnTransactionsFromGivenDate() throws Exception {
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                        1L,
+                        "Transaction within range 1",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 2),
+                        null),
+                new TransactionResponse(
+                        2L,
+                        "Transaction within range 2",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 17),
+                        null));
+        when(transactionService.getTransactions(from, null)).thenReturn(testTransactions);
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("from", "2026-10-01"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(from,null);
+    }
+    @Test
+    void shouldReturnTransactionsToGivenDate() throws Exception {
+        //given
+        LocalDate to = LocalDate.of(2026,10,31);
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                        1L,
+                        "Transaction within range 1",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 2),
+                        null),
+                new TransactionResponse(
+                        2L,
+                        "Transaction within range 2",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 17),
+                        null));
+        when(transactionService.getTransactions(null, to)).thenReturn(testTransactions);
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("to", "2026-10-31"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(null,to);
+    }
+    @Test
+    void shouldReturnTransactionsWhenDateRangeIsSingleDay() throws Exception {
+        //given
+        LocalDate sameDate = LocalDate.of(2026,10,2);
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                        1L,
+                        "Transaction within range 1",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 2),
+                        null),
+                new TransactionResponse(
+                        2L,
+                        "Transaction within range 2",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 2),
+                        null));
+        when(transactionService.getTransactions(sameDate, sameDate)).thenReturn(testTransactions);
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("from", "2026-10-02")
+                        .param("to", "2026-10-02"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 2).toString()));
+        verify(transactionService).getTransactions(sameDate,sameDate);
+    }
+
 }

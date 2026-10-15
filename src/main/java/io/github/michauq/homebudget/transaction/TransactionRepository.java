@@ -15,4 +15,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     BigDecimal sumAmountByType(@Param("type") TransactionType type);
 
     List<Transaction> findByTransactionDate(LocalDate transactionDate);
+
+    List<Transaction> findByTransactionDateBetween(LocalDate from, LocalDate to);
+
+    List<Transaction> findByTransactionDateGreaterThanEqual(LocalDate from);
+
+    List<Transaction> findByTransactionDateLessThanEqual(LocalDate to);
 }

@@ -276,4 +276,119 @@ class TransactionServiceTest {
         verify(transactionRepository).findById(999L);
         verify(transactionRepository, never()).save(any(Transaction.class));
     }
+    @Test
+    void shouldReturnTransactionsFromGivenDate() {
+        // given
+        LocalDate from = LocalDate.of(2026, 10, 15);
+        List<Transaction> transactionAfter = List.of(new Transaction(
+                "After Test Transaction",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 16),
+                null
+        ));
+        when(transactionRepository.findByTransactionDateGreaterThanEqual(from)).thenReturn(transactionAfter);
+        // when
+        List<TransactionResponse> result = transactionService.getTransactions(from, null);
+        // then
+        assertEquals(1,result.size());
+        assertEquals("After Test Transaction", result.getFirst().name());
+        assertEquals(LocalDate.of(2026, 10, 16),
+                result.getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateGreaterThanEqual(from);
+        verify(transactionRepository, never()).findAll();
+    }
+    @Test
+    void shouldReturnTransactionsToGivenDate() {
+        // given
+        LocalDate to = LocalDate.of(2026, 10, 15);
+        List<Transaction> transactionBefore = List.of(new Transaction(
+                "Before Test Transaction",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 1),
+                null
+        ));
+        when(transactionRepository.findByTransactionDateLessThanEqual(to)).thenReturn(transactionBefore);
+        // when
+        List<TransactionResponse> result = transactionService.getTransactions(null, to);
+        // then
+        assertEquals(1,result.size());
+        assertEquals("Before Test Transaction", result.getFirst().name());
+        assertEquals(LocalDate.of(2026, 10, 1),
+                result.getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateLessThanEqual(to);
+        verify(transactionRepository, never()).findAll();
+    }
+    @Test
+    void shouldReturnTransactionsWithinDateRange() {
+        // given
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        List<Transaction> transactionInRange = List.of(new Transaction(
+                "In Range Test Transaction",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 5),
+                null));
+        when(transactionRepository.findByTransactionDateBetween(from,to)).thenReturn(transactionInRange);
+        // when
+        List<TransactionResponse> result = transactionService.getTransactions(from, to);
+        // then
+        assertEquals(1,result.size());
+        assertEquals("In Range Test Transaction", result.getFirst().name());
+        assertEquals(LocalDate.of(2026, 10, 5),
+                result.getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateBetween(from,to);
+        verify(transactionRepository, never()).findAll();
+    }
+    @Test
+    void shouldReturnAllTransactionsWhenBothDatesAreNull(){
+        //given
+        List<Transaction> allTransactions = List.of(new Transaction(
+                "Transaction 1",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 6),
+                null),
+                new Transaction(
+                "Transaction 2",
+                BigDecimal.valueOf(20),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026, 10, 5),
+                null));
+        when(transactionRepository.findAll()).thenReturn(allTransactions);
+        //when
+        List<TransactionResponse> result = transactionService.getTransactions(null, null);
+        //then
+        assertEquals(2,result.size());
+        assertEquals("Transaction 1", result.getFirst().name());
+        assertEquals(LocalDate.of(2026, 10, 6),
+                result.getFirst().transactionDate());
+        assertEquals("Transaction 2", result.getLast().name());
+        assertEquals(LocalDate.of(2026, 10, 5),
+                result.getLast().transactionDate());
+        verify(transactionRepository).findAll();
+        verify(transactionRepository, never())
+                .findByTransactionDateBetween(any(), any());
+    }
+    @Test
+    void shouldThrowExceptionWhenFromDateIsAfterToDate() {
+        // given
+        LocalDate from = LocalDate.of(2026, 11, 1);
+        LocalDate to = LocalDate.of(2026, 10, 31);
+        // when + then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactions(from, to));
+        assertEquals(
+                "From date cannot be after to date",
+                exception.getMessage()
+        );
+        verifyNoInteractions(transactionRepository);
+    }
+
 }

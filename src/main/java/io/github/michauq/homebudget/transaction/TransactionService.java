@@ -21,9 +21,37 @@ public class TransactionService {
         BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).orElse(BigDecimal.ZERO);
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
-
+    //GET ALL + FILTER BY DATE RANGE
+    public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to) throws IllegalArgumentException{
+        List<Transaction> transactions;
+        if(from != null && to != null && from.isAfter(to)){
+            throw new IllegalArgumentException("From date cannot be after to date");
+        }
+        if(from == null && to == null){
+            transactions = transactionRepository.findAll();
+        }
+        else if(to == null){
+            transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from);
+        }
+        else if(from == null){
+            transactions = transactionRepository.findByTransactionDateLessThanEqual(to);
+        }
+        else{
+            transactions = transactionRepository.findByTransactionDateBetween(from, to);
+        }
+        return transactions.stream()
+                .map(transaction -> new TransactionResponse(
+                        transaction.getId(),
+                        transaction.getName(),
+                        transaction.getAmount(),
+                        transaction.getType(),
+                        transaction.getCategory(),
+                        transaction.getTransactionDate(),
+                        transaction.getTransactionTime()))
+                .toList();
+    }
     //CRUD implementation
-    //GET ALL + FILTER BY PARAMETER
+    //GET ALL + FILTER BY DATE
     public List<TransactionResponse> getTransactions(LocalDate date){
         List<Transaction> transactions;
         if(date == null){
