@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -137,7 +138,8 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 9, 18),
                 null));
-        when(transactionRepository.findAll()).thenReturn(testFindAllData);
+        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id"))
+        )).thenReturn(testFindAllData);
         // when
         List<TransactionResponse> result = transactionService.getTransactions(null);
         // then
@@ -151,7 +153,7 @@ class TransactionServiceTest {
         assertEquals(TransactionType.EXPENSE,result.get(1).type());
         assertEquals(LocalDate.of(2026, 9, 18),result.get(1).transactionDate());
 
-        verify(transactionRepository).findAll();
+        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
     }
     @Test
     void shouldReturnTransactionsFilteredByDate(){
@@ -170,7 +172,7 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findByTransactionDate(dateParam)).thenReturn(transactionsForDate);
+        when(transactionRepository.findByTransactionDate(dateParam, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionsForDate);
         //when
         List<TransactionResponse> result = transactionService.getTransactions(dateParam);
         //then
@@ -179,19 +181,19 @@ class TransactionServiceTest {
         assertEquals(LocalDate.of(2026, 10, 5),result.get(0).transactionDate());
         assertEquals("Test Transaction2",result.get(1).name());
         assertEquals(LocalDate.of(2026, 10, 5),result.get(1).transactionDate());
-        verify(transactionRepository).findByTransactionDate(dateParam);
+        verify(transactionRepository).findByTransactionDate(dateParam, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         verify(transactionRepository,never()).findAll();
     }
 
     @Test
     void shouldReturnEmptyListWhenNoTransactionsExist(){
         // given
-        when(transactionRepository.findAll()).thenReturn(new ArrayList<>());
+        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(new ArrayList<>());
         // when
         List<TransactionResponse> result = transactionService.getTransactions(null);
         // then
         assertTrue(result.isEmpty());
-        verify(transactionRepository).findAll();
+        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
     }
     @Test
     void shouldDeleteTransactionWhenExists() {
@@ -288,7 +290,7 @@ class TransactionServiceTest {
                 LocalDate.of(2026, 10, 16),
                 null
         ));
-        when(transactionRepository.findByTransactionDateGreaterThanEqual(from)).thenReturn(transactionAfter);
+        when(transactionRepository.findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionAfter);
         // when
         List<TransactionResponse> result = transactionService.getTransactions(from, null);
         // then
@@ -296,7 +298,7 @@ class TransactionServiceTest {
         assertEquals("After Test Transaction", result.getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 16),
                 result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateGreaterThanEqual(from);
+        verify(transactionRepository).findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         verify(transactionRepository, never()).findAll();
     }
     @Test
@@ -311,7 +313,7 @@ class TransactionServiceTest {
                 LocalDate.of(2026, 10, 1),
                 null
         ));
-        when(transactionRepository.findByTransactionDateLessThanEqual(to)).thenReturn(transactionBefore);
+        when(transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionBefore);
         // when
         List<TransactionResponse> result = transactionService.getTransactions(null, to);
         // then
@@ -319,7 +321,7 @@ class TransactionServiceTest {
         assertEquals("Before Test Transaction", result.getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 1),
                 result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateLessThanEqual(to);
+        verify(transactionRepository).findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         verify(transactionRepository, never()).findAll();
     }
     @Test
@@ -334,7 +336,7 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findByTransactionDateBetween(from,to)).thenReturn(transactionInRange);
+        when(transactionRepository.findByTransactionDateBetween(from,to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionInRange);
         // when
         List<TransactionResponse> result = transactionService.getTransactions(from, to);
         // then
@@ -342,7 +344,7 @@ class TransactionServiceTest {
         assertEquals("In Range Test Transaction", result.getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 5),
                 result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateBetween(from,to);
+        verify(transactionRepository).findByTransactionDateBetween(from,to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         verify(transactionRepository, never()).findAll();
     }
     @Test
@@ -362,7 +364,7 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findAll()).thenReturn(allTransactions);
+        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(allTransactions);
         //when
         List<TransactionResponse> result = transactionService.getTransactions(null, null);
         //then
@@ -373,9 +375,9 @@ class TransactionServiceTest {
         assertEquals("Transaction 2", result.getLast().name());
         assertEquals(LocalDate.of(2026, 10, 5),
                 result.getLast().transactionDate());
-        verify(transactionRepository).findAll();
+        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         verify(transactionRepository, never())
-                .findByTransactionDateBetween(any(), any());
+                .findByTransactionDateBetween(any(), any(), any());
     }
     @Test
     void shouldThrowExceptionWhenFromDateIsAfterToDate() {
@@ -390,5 +392,39 @@ class TransactionServiceTest {
         );
         verifyNoInteractions(transactionRepository);
     }
-
+    @Test
+    void shouldReturnTransactionsSortedByDateDescendingWhenNoFiltersProvided() {
+        // given
+        List<Transaction> allTransactions = List.of(
+                new Transaction(
+                        "Transaction 1",
+                        BigDecimal.valueOf(20),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 31),
+                        null),
+                new Transaction(
+                        "Transaction 2",
+                        BigDecimal.valueOf(20),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 15),
+                        null),
+                new Transaction(
+                        "Transaction 3",
+                        BigDecimal.valueOf(20),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 1),
+                        null));
+        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(allTransactions);
+        // when
+        List<TransactionResponse> result = transactionService.getTransactions(null, null);
+        // then
+        assertEquals(3,result.size());
+        assertEquals(LocalDate.of(2026,10,31),result.getFirst().transactionDate());
+        assertEquals(LocalDate.of(2026,10,15),result.get(1).transactionDate());
+        assertEquals(LocalDate.of(2026,10,1),result.getLast().transactionDate());
+        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+    }
 }

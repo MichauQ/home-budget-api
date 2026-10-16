@@ -452,5 +452,47 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 2).toString()));
         verify(transactionService).getTransactions(sameDate,sameDate);
     }
+    @Test
+    void shouldReturnTransactionsSortedByDateDescendingWhenNoFiltersProvided() throws Exception {
+        // given
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                        1L,
+                        "Transaction sorted 1",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 31),
+                        null),
+                new TransactionResponse(
+                        2L,
+                        "Transaction sorted 2",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 15),
+                        null),
+                new TransactionResponse(
+                        3L,
+                        "Transaction sorted 3",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 1),
+                        null));
+        when(transactionService.getTransactions(null, null)).thenReturn(testTransactions);
+        //when
+        mockMvc.perform(get("/api/transactions"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 31).toString()))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 15).toString()))
+                .andExpect(jsonPath("$[2].id").value(3L))
+                .andExpect(jsonPath("$[2].transactionDate").value(LocalDate.of(2026, 10, 1).toString()));
+        verify(transactionService).getTransactions(null,null);
+    }
 
 }

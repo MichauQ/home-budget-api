@@ -1,6 +1,7 @@
 package io.github.michauq.homebudget.transaction;
 
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,16 +29,16 @@ public class TransactionService {
             throw new IllegalArgumentException("From date cannot be after to date");
         }
         if(from == null && to == null){
-            transactions = transactionRepository.findAll();
+            transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         else if(to == null){
-            transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from);
+            transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         else if(from == null){
-            transactions = transactionRepository.findByTransactionDateLessThanEqual(to);
+            transactions = transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         else{
-            transactions = transactionRepository.findByTransactionDateBetween(from, to);
+            transactions = transactionRepository.findByTransactionDateBetween(from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         return transactions.stream()
                 .map(transaction -> new TransactionResponse(
@@ -55,10 +56,10 @@ public class TransactionService {
     public List<TransactionResponse> getTransactions(LocalDate date){
         List<Transaction> transactions;
         if(date == null){
-             transactions = transactionRepository.findAll();
+             transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         else{
-            transactions = transactionRepository.findByTransactionDate(date);
+            transactions = transactionRepository.findByTransactionDate(date,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         }
         return transactions.stream()
                 .map(transaction -> new TransactionResponse(

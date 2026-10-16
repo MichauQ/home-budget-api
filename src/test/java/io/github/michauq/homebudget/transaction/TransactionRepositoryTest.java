@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
@@ -115,7 +116,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5));
+        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         //then
         assertEquals(2,result.size());
         List<String> names = result.stream()
@@ -132,7 +133,7 @@ class TransactionRepositoryTest {
     }
     @Test
     void shouldReturnEmptyListWhenNoTransactionsMatchDate(){
-        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5));
+        List<Transaction> result = transactionRepository.findByTransactionDate(LocalDate.of(2026, 10, 5), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         assertTrue(result.isEmpty());
     }
 
@@ -174,7 +175,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31));
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         //then
         assertEquals(2,result.size());
         List<String> names = result.stream()
@@ -201,7 +202,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAndFlush(testTransaction1);
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,1));
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,1), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         //then
         assertEquals(1, result.size());
         assertEquals("Test single day Transaction", result.getFirst().getName());
@@ -220,7 +221,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAndFlush(testTransaction1);
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31));
+        List<Transaction> result = transactionRepository.findByTransactionDateBetween(LocalDate.of(2026, 10, 1),LocalDate.of(2026,10,31), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         //then
         assertTrue(result.isEmpty());
     }
@@ -255,7 +256,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDateGreaterThanEqual(LocalDate.of(2026, 10, 15));
+        List<Transaction> result = transactionRepository.findByTransactionDateGreaterThanEqual(LocalDate.of(2026, 10, 15), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         // then
         assertEquals(2,result.size());
         List<String> names = result.stream()
@@ -298,7 +299,7 @@ class TransactionRepositoryTest {
         transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
         testEntityManager.clear();
         //when
-        List<Transaction> result = transactionRepository.findByTransactionDateLessThanEqual(LocalDate.of(2026, 10, 15));
+        List<Transaction> result = transactionRepository.findByTransactionDateLessThanEqual(LocalDate.of(2026, 10, 15), Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         // then
         assertEquals(2,result.size());
         List<String> names = result.stream()
@@ -309,5 +310,81 @@ class TransactionRepositoryTest {
         assertTrue(result.stream()
                 .noneMatch(transaction ->
                         transaction.getTransactionDate().isAfter(LocalDate.of(2026,10,15))));
+    }
+    @Test
+    void shouldReturnTransactionsSortedByDateDescending() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction sort 1",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction sort 2",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction sort 3",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        //then
+        assertEquals(3,result.size());
+        assertEquals(LocalDate.of(2026,10,31),result.getFirst().getTransactionDate());
+        assertEquals(LocalDate.of(2026,10,15),result.get(1).getTransactionDate());
+        assertEquals(LocalDate.of(2026,10,1),result.getLast().getTransactionDate());
+    }
+    @Test
+    void shouldReturnTransactionsWithSameDateSortedByIdDescending() {
+        //given
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction sort 1",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction sort 2",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction sort 3",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        //then
+        assertEquals(3,result.size());
+        assertEquals(testTransaction3.getId(), result.getFirst().getId());
+        assertEquals(testTransaction2.getId(),result.get(1).getId());
+        assertEquals(testTransaction1.getId(),result.getLast().getId());
+        assertTrue(result.get(0).getId() > result.get(1).getId());
+        assertTrue(result.get(1).getId() > result.get(2).getId());
     }
 }
