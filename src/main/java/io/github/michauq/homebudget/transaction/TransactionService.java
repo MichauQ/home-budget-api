@@ -22,6 +22,11 @@ public class TransactionService {
         BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).orElse(BigDecimal.ZERO);
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
+    public TransactionSummaryResponse getBalanceSummary(LocalDate from, LocalDate to) throws IllegalArgumentException{
+        BigDecimal income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to)).orElse(BigDecimal.ZERO);
+        BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to)).orElse(BigDecimal.ZERO);
+        return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
+    }
     //GET ALL + FILTER BY DATE RANGE
     public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to) throws IllegalArgumentException{
         List<Transaction> transactions;

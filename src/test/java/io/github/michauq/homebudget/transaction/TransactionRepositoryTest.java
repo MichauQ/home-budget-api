@@ -17,6 +17,7 @@ import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
@@ -386,5 +387,49 @@ class TransactionRepositoryTest {
         assertEquals(testTransaction1.getId(),result.getLast().getId());
         assertTrue(result.get(0).getId() > result.get(1).getId());
         assertTrue(result.get(1).getId() > result.get(2).getId());
+    }
+    @Test
+    void shouldSumTransactionsOfGivenTypeWithinDateRange(){
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        LocalDate to = LocalDate.of(2026,10,31);
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction before range",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction 'from' border",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction 'to' border",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction4 = new Transaction(
+                "Test Transaction of different type",
+                BigDecimal.valueOf(100),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
+        testEntityManager.clear();
+        //when
+        BigDecimal result = transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE,from, to);
+        //then
+        assertEquals(0,BigDecimal.valueOf(80).compareTo(result));
     }
 }

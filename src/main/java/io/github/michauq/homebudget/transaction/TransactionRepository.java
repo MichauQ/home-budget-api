@@ -15,6 +15,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.type = :type")
     BigDecimal sumAmountByType(@Param("type") TransactionType type);
 
+    @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.type = :type AND t.transactionDate BETWEEN :from AND :to")
+    BigDecimal sumAmountByTypeAndDateRange(TransactionType type, LocalDate from, LocalDate to);
+
     List<Transaction> findByTransactionDate(LocalDate transactionDate, Sort sort);
 
     List<Transaction> findByTransactionDateBetween(LocalDate from, LocalDate to, Sort sort);

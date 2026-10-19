@@ -45,6 +45,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.income").value(BigDecimal.valueOf(150)))
                 .andExpect(jsonPath("$.expenses").value(BigDecimal.valueOf(30)))
                 .andExpect(jsonPath("$.balance").value(BigDecimal.valueOf(120)));
+        verify(transactionService).getBalanceSummary();
     }
 
     @Test
@@ -493,6 +494,38 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[2].id").value(3L))
                 .andExpect(jsonPath("$[2].transactionDate").value(LocalDate.of(2026, 10, 1).toString()));
         verify(transactionService).getTransactions(null,null);
+    }
+    @Test
+    void shouldReturnTransactionSummaryForDateRange() throws Exception {
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        LocalDate to = LocalDate.of(2026,10,31);
+        TransactionSummaryResponse summaryResponse = new TransactionSummaryResponse(
+                BigDecimal.valueOf(150),
+                BigDecimal.valueOf(30),
+                BigDecimal.valueOf(120)
+        );
+        when(transactionService.getBalanceSummary(from, to)).thenReturn(summaryResponse);
+        //when
+        mockMvc.perform(get("/api/transactions/summary?from=2026-10-01&to=2026-10-31"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.income").value(150))
+                .andExpect(jsonPath("$.expenses").value(30))
+                .andExpect(jsonPath("$.balance").value(120));
+        verify(transactionService).getBalanceSummary(from,to);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSummaryDateRangeIsReversed() throws Exception{
+        //given
+        LocalDate from = LocalDate.of(2026,10,31);
+        LocalDate to = LocalDate.of(2026,10,1);
+        //when
+        mockMvc.perform(get("/api/transactions/summary?from=2026-10-31&to=2026-10-01"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
     }
 
 }

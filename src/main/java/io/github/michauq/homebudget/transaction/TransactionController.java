@@ -21,9 +21,26 @@ public class TransactionController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<TransactionSummaryResponse> getBalanceSummary(){
-        TransactionSummaryResponse summaryResponse = transactionService.getBalanceSummary();
-        return ResponseEntity.ok(summaryResponse);
+    public ResponseEntity<TransactionSummaryResponse> getBalanceSummary(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to) {
+
+        if (from == null && to == null) {
+            return ResponseEntity.ok(transactionService.getBalanceSummary());
+        }
+
+        if (from == null || to == null || from.isAfter(to)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid date range"
+            );
+        }
+
+        return ResponseEntity.ok(transactionService.getBalanceSummary(from, to));
     }
 
     @GetMapping("/{id}")

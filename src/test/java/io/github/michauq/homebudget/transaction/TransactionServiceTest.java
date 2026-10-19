@@ -427,4 +427,22 @@ class TransactionServiceTest {
         assertEquals(LocalDate.of(2026,10,1),result.getLast().transactionDate());
         verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
     }
+    @Test
+    void shouldReturnTransactionSummaryForDateRange(){
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        LocalDate to = LocalDate.of(2026,10,31);
+
+        when(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to)).thenReturn(BigDecimal.valueOf(150));
+        when(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to)).thenReturn(BigDecimal.valueOf(30));
+        //when
+        TransactionSummaryResponse result = transactionService.getBalanceSummary(from, to);
+        //then
+        assertEquals(BigDecimal.valueOf(150),result.income());
+        assertEquals(BigDecimal.valueOf(30),result.expenses());
+        assertEquals(BigDecimal.valueOf(120),result.balance());
+        verify(transactionRepository).sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to);
+        verify(transactionRepository).sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to);
+    }
+
 }
