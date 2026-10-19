@@ -20,6 +20,7 @@ Date format: YYYY-MM-DD (ISO 8601)
 | `to`         | Returns transactions on or before the specified date             | `GET /api/transactions?to=2026-10-31`                |
 | `from` + `to`| Returns transactions within the specified date range (inclusive) | `GET /api/transactions?from=2026-10-01&to=2026-10-31` |
 
+#### All data returned by this endpoint is automatically sorted by transactionDate in descending order, then by id in descending order when transactionDate values are identical.
 ### Error responses
 
 The API returns `400 Bad Request` when:
