@@ -432,4 +432,47 @@ class TransactionRepositoryTest {
         //then
         assertEquals(0,BigDecimal.valueOf(80).compareTo(result));
     }
+    @Test
+    void shouldSumTransactionsOfGivenTypeFromDateInclusive(){
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        Transaction testTransaction1 = new Transaction(
+                "Test Transaction before range",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "Test Transaction 'from' border",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "Test Transaction after 'from'",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction4 = new Transaction(
+                "Test Transaction of different type",
+                BigDecimal.valueOf(100),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
+        testEntityManager.clear();
+        //when
+        BigDecimal result = transactionRepository.sumAmountByTypeAndFromDate(TransactionType.EXPENSE,from);
+        //then
+        assertEquals(0,BigDecimal.valueOf(80).compareTo(result));
+    }
 }

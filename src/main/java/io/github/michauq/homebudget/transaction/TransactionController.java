@@ -32,8 +32,7 @@ public class TransactionController {
         if (from == null && to == null) {
             return ResponseEntity.ok(transactionService.getBalanceSummary());
         }
-
-        if (from == null || to == null || from.isAfter(to)) {
+        if (from != null && to != null && from.isAfter(to)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid date range"

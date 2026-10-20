@@ -22,13 +22,25 @@ public class TransactionService {
         BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).orElse(BigDecimal.ZERO);
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
-    public TransactionSummaryResponse getBalanceSummary(LocalDate from, LocalDate to) throws IllegalArgumentException{
-        BigDecimal income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to)).orElse(BigDecimal.ZERO);
-        BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to)).orElse(BigDecimal.ZERO);
+    public TransactionSummaryResponse getBalanceSummary(LocalDate from, LocalDate to){
+        BigDecimal income;
+        BigDecimal expenses;
+        if(to == null){
+            income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.INCOME, from)).orElse(BigDecimal.ZERO);
+            expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.EXPENSE, from)).orElse(BigDecimal.ZERO);
+        }
+        else if(from == null){
+            income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndToDate(TransactionType.INCOME,to)).orElse(BigDecimal.ZERO);
+            expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndToDate(TransactionType.EXPENSE,to)).orElse(BigDecimal.ZERO);
+        }
+        else{
+            income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to)).orElse(BigDecimal.ZERO);
+            expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to)).orElse(BigDecimal.ZERO);
+        }
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
     //GET ALL + FILTER BY DATE RANGE
-    public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to) throws IllegalArgumentException{
+    public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to){
         List<Transaction> transactions;
         if(from != null && to != null && from.isAfter(to)){
             throw new IllegalArgumentException("From date cannot be after to date");

@@ -444,5 +444,20 @@ class TransactionServiceTest {
         verify(transactionRepository).sumAmountByTypeAndDateRange(TransactionType.INCOME, from, to);
         verify(transactionRepository).sumAmountByTypeAndDateRange(TransactionType.EXPENSE, from, to);
     }
+    @Test
+    void shouldReturnTransactionSummaryFromDateInclusive(){
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
 
+        when(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.INCOME, from)).thenReturn(BigDecimal.valueOf(150));
+        when(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.EXPENSE, from)).thenReturn(BigDecimal.valueOf(30));
+        //when
+        TransactionSummaryResponse result = transactionService.getBalanceSummary(from, null);
+        //then
+        assertEquals(BigDecimal.valueOf(150),result.income());
+        assertEquals(BigDecimal.valueOf(30),result.expenses());
+        assertEquals(BigDecimal.valueOf(120),result.balance());
+        verify(transactionRepository).sumAmountByTypeAndFromDate(TransactionType.INCOME, from);
+        verify(transactionRepository).sumAmountByTypeAndFromDate(TransactionType.EXPENSE, from);
+    }
 }

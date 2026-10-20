@@ -527,5 +527,24 @@ class TransactionControllerTest {
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(transactionService);
     }
+    @Test
+    void shouldReturnTransactionSummaryWithOnlyFromDate() throws Exception {
+        //given
+        LocalDate from = LocalDate.of(2026,10,1);
+        TransactionSummaryResponse summaryResponse = new TransactionSummaryResponse(
+                BigDecimal.valueOf(150),
+                BigDecimal.valueOf(30),
+                BigDecimal.valueOf(120)
+        );
+        when(transactionService.getBalanceSummary(from, null)).thenReturn(summaryResponse);
+        //when
+        mockMvc.perform(get("/api/transactions/summary?from=2026-10-01"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.income").value(150))
+                .andExpect(jsonPath("$.expenses").value(30))
+                .andExpect(jsonPath("$.balance").value(120));
+        verify(transactionService).getBalanceSummary(from,null);
+    }
 
 }
