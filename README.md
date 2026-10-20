@@ -27,3 +27,19 @@ The API returns `400 Bad Request` when:
 - `date` is combined with `from` or `to`.
 - `from` is later than `to`.
 - A date has an invalid format.
+
+### GET /api/transactions/summary
+#### Available parameters
+Date format: YYYY-MM-DD (ISO 8601)
+
+| Parameters   | Description                                                 | Example                                                       |
+|--------------|-------------------------------------------------------------|---------------------------------------------------------------|
+| None         | Returns the summary for all transactions.                   | `GET /api/transactions/summary`                               |
+| `from`       | Returns summary on or after the specified date              | `GET /api/transactions/summary?from=2026-10-01`               |
+| `to`         | Returns summary on or before the specified date             | `GET /api/transactions/summary?to=2026-10-31`                 |
+| `from` + `to`| Returns summary within the specified date range (inclusive) | `GET /api/transactions/summary?from=2026-10-01&to=2026-10-31` |
+
+### Error responses
+The API returns `400 Bad Request` when:
+- `from` is later than `to`.
+- A date has an invalid format.
