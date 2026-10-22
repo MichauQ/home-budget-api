@@ -1,5 +1,6 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT SUM(t.amount) FROM Transaction t WHERE t.type = :type AND t.transactionDate <= :to")
     BigDecimal sumAmountByTypeAndToDate(TransactionType type, LocalDate to);
+
+    @Query("""
+            SELECT new io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse(
+                t.category,
+                SUM(t.amount)
+            )
+             FROM Transaction t\s
+             WHERE t.type = :type
+             GROUP BY t.category
+             ORDER BY SUM(t.amount) DESC
+            \s""")
+    List<CategoryExpenseSummaryResponse> sumExpenseByCategory(@Param("type") TransactionType type);
 
     List<Transaction> findByTransactionDate(LocalDate transactionDate, Sort sort);
 

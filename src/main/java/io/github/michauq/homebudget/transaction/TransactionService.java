@@ -1,5 +1,9 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse;
+import io.github.michauq.homebudget.transaction.dto.CreateTransactionRequest;
+import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
+import io.github.michauq.homebudget.transaction.dto.TransactionSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -39,6 +43,10 @@ public class TransactionService {
         }
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
     }
+    public List<CategoryExpenseSummaryResponse> getExpensesByCategory() {
+        return transactionRepository.sumExpenseByCategory(TransactionType.EXPENSE);
+    }
+
     //GET ALL + FILTER BY DATE RANGE
     public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to){
         List<Transaction> transactions;

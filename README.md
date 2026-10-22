@@ -43,3 +43,27 @@ Date format: YYYY-MM-DD (ISO 8601)
 The API returns `400 Bad Request` when:
 - `from` is later than `to`.
 - A date has an invalid format.
+
+### GET /api/transactions/summary/expenses-by-category
+
+Returns the total amount of expenses grouped by transaction category.
+- Includes only transactions of type EXPENSE.
+- Results are sorted by total expense amount in descending order.
+- If no expenses exist, the endpoint returns 200 OK with an empty JSON array ([]).
+### Example
+```json
+[
+    {
+        "category": "FOOD",
+        "total": 277.50
+    },
+    {
+        "category": "TRANSPORT",
+        "total": 185.00
+    },
+    {
+        "category": "OTHER",
+        "total": 125.00
+    }
+]
+```

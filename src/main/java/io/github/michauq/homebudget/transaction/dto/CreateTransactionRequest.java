@@ -1,4 +1,4 @@
-package io.github.michauq.homebudget.transaction;
+package io.github.michauq.homebudget.transaction.dto;
 
 import io.github.michauq.homebudget.transaction.enums.TransactionCategory;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;

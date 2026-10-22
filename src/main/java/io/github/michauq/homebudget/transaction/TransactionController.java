@@ -1,5 +1,9 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse;
+import io.github.michauq.homebudget.transaction.dto.CreateTransactionRequest;
+import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
+import io.github.michauq.homebudget.transaction.dto.TransactionSummaryResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -18,6 +22,11 @@ public class TransactionController {
 
     public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
+    }
+
+    @GetMapping("/summary/expenses-by-category")
+    public ResponseEntity<List<CategoryExpenseSummaryResponse>> getExpensesByCategory(){
+        return ResponseEntity.ok(transactionService.getExpensesByCategory());
     }
 
     @GetMapping("/summary")

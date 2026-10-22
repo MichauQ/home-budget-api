@@ -1,5 +1,7 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.dto.CreateTransactionRequest;
+import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionCategory;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import jakarta.persistence.EntityManager;

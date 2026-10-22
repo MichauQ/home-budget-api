@@ -1,8 +1,8 @@
 package io.github.michauq.homebudget.transaction;
 
+import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionCategory;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -13,11 +13,9 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.any;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
@@ -474,5 +472,59 @@ class TransactionRepositoryTest {
         BigDecimal result = transactionRepository.sumAmountByTypeAndFromDate(TransactionType.EXPENSE,from);
         //then
         assertEquals(0,BigDecimal.valueOf(80).compareTo(result));
+    }
+
+    @Test
+    void shouldSumExpensesByCategoryAndSortDescending() {
+        // Given
+        Transaction testTransaction1 = new Transaction(
+                "TEST FOOD EXPENSE 1",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "TEST FOOD EXPENSE 2",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "TEST TRANSPORT EXPENSE",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.TRANSPORT,
+                LocalDate.of(2026,10,31),
+                null
+        );
+        Transaction testTransaction4 = new Transaction(
+                "TEST INCOME",
+                BigDecimal.valueOf(500),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
+        testEntityManager.clear();
+        //When
+        List<CategoryExpenseSummaryResponse> result = transactionRepository.sumExpenseByCategory(TransactionType.EXPENSE);
+        // Then
+        assertEquals(2,result.size());
+        assertEquals(TransactionCategory.FOOD,result.getFirst().category());
+        assertEquals(0,BigDecimal.valueOf(150).compareTo(result.getFirst().total()));
+        assertEquals(TransactionCategory.TRANSPORT,result.getLast().category());
+        assertEquals(0,BigDecimal.valueOf(30).compareTo(result.getLast().total()));
+    }
+    @Test
+    void shouldReturnEmptyListWhenNoExpensesExist(){
+        //when
+        List<CategoryExpenseSummaryResponse> result = transactionRepository.sumExpenseByCategory(TransactionType.EXPENSE);
+        //then
+        assertTrue(result.isEmpty());
     }
 }
