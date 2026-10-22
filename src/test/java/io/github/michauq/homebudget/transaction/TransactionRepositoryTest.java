@@ -527,4 +527,84 @@ class TransactionRepositoryTest {
         //then
         assertTrue(result.isEmpty());
     }
+    @Test
+    void shouldFindTransactionsByType(){
+        // Given
+        Transaction testTransaction1 = new Transaction(
+                "TEST EXPENSE",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "TEST INCOME",
+                BigDecimal.valueOf(50),
+                TransactionType.INCOME,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByType(TransactionType.EXPENSE,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        // Then
+        assertEquals(1,result.size());
+        assertEquals("TEST EXPENSE", result.getFirst().getName());
+        assertEquals(TransactionType.EXPENSE,result.getFirst().getType());
+    }
+    @Test
+    void shouldFilterTransactionsByTypeAndDateRange(){
+        // Given
+        LocalDate from = LocalDate.of(2026,10,1);
+        LocalDate to = LocalDate.of(2026,10,31);
+        Transaction testTransaction1 = new Transaction(
+                "TEST EXPENSE OUT OF RANGE",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,9,6),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "TEST EXPENSE IN RANGE BORDER",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.FOOD,
+                LocalDate.of(2026,10,1),
+                null
+        );
+        Transaction testTransaction3 = new Transaction(
+                "TEST EXPENSE IN RANGE",
+                BigDecimal.valueOf(30),
+                TransactionType.EXPENSE,
+                TransactionCategory.TRANSPORT,
+                LocalDate.of(2026,10,16),
+                null
+        );
+        Transaction testTransaction4 = new Transaction(
+                "TEST INCOME",
+                BigDecimal.valueOf(500),
+                TransactionType.INCOME,
+                TransactionCategory.OTHER,
+                LocalDate.of(2026,10,15),
+                null
+        );
+        transactionRepository.saveAllAndFlush(List.of(testTransaction1,testTransaction2,testTransaction3,testTransaction4));
+        testEntityManager.clear();
+        //when
+        List<Transaction> result = transactionRepository.findByTypeAndTransactionDateBetween(TransactionType.EXPENSE, from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        // Then
+        assertEquals(2,result.size());
+
+        assertEquals("TEST EXPENSE IN RANGE", result.getFirst().getName());
+        assertEquals(TransactionType.EXPENSE,result.getFirst().getType());
+        assertEquals(LocalDate.of(2026,10,16),result.getFirst().getTransactionDate());
+
+        assertEquals("TEST EXPENSE IN RANGE BORDER", result.getLast().getName());
+        assertEquals(TransactionType.EXPENSE,result.getLast().getType());
+        assertEquals(LocalDate.of(2026,10,1),result.getLast().getTransactionDate());
+    }
 }

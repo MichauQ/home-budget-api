@@ -11,6 +11,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.HttpClientErrorException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -107,7 +108,7 @@ class TransactionControllerTest {
                         null
                 )
         );
-        when(transactionService.getTransactions(null,null)).thenReturn(response);
+        when(transactionService.getTransactions(null,null, null)).thenReturn(response);
         //when
         mockMvc.perform(get("/api/transactions"))
                 //then
@@ -116,7 +117,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Controller transaction test data2"));
-        verify(transactionService).getTransactions(null,null);
+        verify(transactionService).getTransactions(null,null, null);
     }
     @Test
     void shouldReturnTransactionsFilteredByDate() throws Exception {
@@ -131,7 +132,7 @@ class TransactionControllerTest {
                         LocalDate.of(2026,10,5),
                         null
                 ));
-        when(transactionService.getTransactions(dateParam)).thenReturn(response);
+        when(transactionService.getTransactions(null, dateParam)).thenReturn(response);
         //when
         mockMvc.perform(get("/api/transactions?date=2026-10-05"))
                 //then
@@ -139,7 +140,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
                 .andExpect(jsonPath("$[0].transactionDate").value(dateParam.toString()));
-        verify(transactionService).getTransactions(dateParam);
+        verify(transactionService).getTransactions(null, dateParam);
     }
     @Test
     void shouldReturnBadRequestWhenDateParameterIsInvalid() throws Exception {
@@ -300,14 +301,14 @@ class TransactionControllerTest {
         //given
         LocalDate from = LocalDate.of(2026,10,31);
         LocalDate to = LocalDate.of(2026,10,15);
-        when(transactionService.getTransactions(from, to)).thenThrow(IllegalArgumentException.class);
+        when(transactionService.getTransactions(null, from, to)).thenThrow(IllegalArgumentException.class);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-31")
                         .param("to", "2026-10-15"))
                 //then
                 .andExpect(status().isBadRequest());
-        verify(transactionService).getTransactions(from,to);
+        verify(transactionService).getTransactions(null, from, to);
     }
     @Test
     void shouldReturnTransactionsWithinDateRange() throws Exception {
@@ -331,7 +332,7 @@ class TransactionControllerTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 17),
                 null));
-        when(transactionService.getTransactions(from, to)).thenReturn(testTransactions);
+        when(transactionService.getTransactions(null, from, to)).thenReturn(testTransactions);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-01")
@@ -345,7 +346,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(from,to);
+        verify(transactionService).getTransactions(null, from, to);
     }
     @Test
     void shouldReturnTransactionsFromGivenDate() throws Exception {
@@ -368,7 +369,7 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 17),
                         null));
-        when(transactionService.getTransactions(from, null)).thenReturn(testTransactions);
+        when(transactionService.getTransactions(null, from, null)).thenReturn(testTransactions);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-01"))
@@ -381,7 +382,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(from,null);
+        verify(transactionService).getTransactions(null, from,null);
     }
     @Test
     void shouldReturnTransactionsToGivenDate() throws Exception {
@@ -404,7 +405,7 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 17),
                         null));
-        when(transactionService.getTransactions(null, to)).thenReturn(testTransactions);
+        when(transactionService.getTransactions(null,null, to)).thenReturn(testTransactions);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("to", "2026-10-31"))
@@ -417,7 +418,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(null,to);
+        verify(transactionService).getTransactions(null, null, to);
     }
     @Test
     void shouldReturnTransactionsWhenDateRangeIsSingleDay() throws Exception {
@@ -440,7 +441,7 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 2),
                         null));
-        when(transactionService.getTransactions(sameDate, sameDate)).thenReturn(testTransactions);
+        when(transactionService.getTransactions(null, sameDate, sameDate)).thenReturn(testTransactions);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-02")
@@ -454,7 +455,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].id").value(2L))
                 .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 2).toString()));
-        verify(transactionService).getTransactions(sameDate,sameDate);
+        verify(transactionService).getTransactions(null, sameDate,sameDate);
     }
     @Test
     void shouldReturnTransactionsSortedByDateDescendingWhenNoFiltersProvided() throws Exception {
@@ -484,7 +485,7 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 1),
                         null));
-        when(transactionService.getTransactions(null, null)).thenReturn(testTransactions);
+        when(transactionService.getTransactions(null, null, null)).thenReturn(testTransactions);
         //when
         mockMvc.perform(get("/api/transactions"))
                 //then
@@ -496,7 +497,7 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 15).toString()))
                 .andExpect(jsonPath("$[2].id").value(3L))
                 .andExpect(jsonPath("$[2].transactionDate").value(LocalDate.of(2026, 10, 1).toString()));
-        verify(transactionService).getTransactions(null,null);
+        verify(transactionService).getTransactions(null,null, null);
     }
     @Test
     void shouldReturnTransactionSummaryForDateRange() throws Exception {
@@ -550,4 +551,12 @@ class TransactionControllerTest {
         verify(transactionService).getBalanceSummary(from,null);
     }
 
+    @Test
+    void shouldReturnBadRequestForInvalidTransactionType() throws Exception{
+        //when
+        mockMvc.perform(get("/api/transactions?type=abcd"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
+    }
 }

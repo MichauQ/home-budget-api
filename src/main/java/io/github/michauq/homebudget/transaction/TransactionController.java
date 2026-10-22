@@ -4,6 +4,7 @@ import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryRespon
 import io.github.michauq.homebudget.transaction.dto.CreateTransactionRequest;
 import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
 import io.github.michauq.homebudget.transaction.dto.TransactionSummaryResponse;
+import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -62,6 +63,8 @@ public class TransactionController {
     @GetMapping
     public List<TransactionResponse> getTransactions(
             @RequestParam(required = false)
+            TransactionType type,
+            @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate date,
             @RequestParam(required = false)
@@ -76,9 +79,9 @@ public class TransactionController {
                     "Invalid query parameters"
             );
         } else if (date != null) {
-            return transactionService.getTransactions(date);
+            return transactionService.getTransactions(type, date);
         }
-        return transactionService.getTransactions(from, to);
+        return transactionService.getTransactions(type, from, to);
     }
 
     @PostMapping

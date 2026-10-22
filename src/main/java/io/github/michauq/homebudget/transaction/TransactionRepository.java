@@ -37,11 +37,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             \s""")
     List<CategoryExpenseSummaryResponse> sumExpenseByCategory(@Param("type") TransactionType type);
 
+    List<Transaction> findByType(TransactionType type, Sort sort);
+
     List<Transaction> findByTransactionDate(LocalDate transactionDate, Sort sort);
+    List<Transaction> findByTypeAndTransactionDate(TransactionType type, LocalDate transactionDate, Sort sort);
 
     List<Transaction> findByTransactionDateBetween(LocalDate from, LocalDate to, Sort sort);
+    List<Transaction> findByTypeAndTransactionDateBetween(TransactionType type, LocalDate from, LocalDate to, Sort sort);
 
     List<Transaction> findByTransactionDateGreaterThanEqual(LocalDate from, Sort sort);
+    List<Transaction> findByTypeAndTransactionDateGreaterThanEqual(TransactionType type, LocalDate from, Sort sort);
 
     List<Transaction> findByTransactionDateLessThanEqual(LocalDate to, Sort sort);
+    List<Transaction> findByTypeAndTransactionDateLessThanEqual(TransactionType type, LocalDate to, Sort sort);
 }

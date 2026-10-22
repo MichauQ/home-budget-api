@@ -48,22 +48,32 @@ public class TransactionService {
     }
 
     //GET ALL + FILTER BY DATE RANGE
-    public List<TransactionResponse> getTransactions(LocalDate from, LocalDate to){
+    public List<TransactionResponse> getTransactions(TransactionType type, LocalDate from, LocalDate to){
         List<Transaction> transactions;
         if(from != null && to != null && from.isAfter(to)){
             throw new IllegalArgumentException("From date cannot be after to date");
         }
-        if(from == null && to == null){
-            transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        if(type == null) {
+            if (from == null && to == null) {
+                transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else if (to == null) {
+                transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else if (from == null) {
+                transactions = transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else {
+                transactions = transactionRepository.findByTransactionDateBetween(from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            }
         }
-        else if(to == null){
-            transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        }
-        else if(from == null){
-            transactions = transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        }
-        else{
-            transactions = transactionRepository.findByTransactionDateBetween(from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        else {
+            if (from == null && to == null) {
+                transactions = transactionRepository.findByType(type, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else if (to == null) {
+                transactions = transactionRepository.findByTypeAndTransactionDateGreaterThanEqual(type, from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else if (from == null) {
+                transactions = transactionRepository.findByTypeAndTransactionDateLessThanEqual(type, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else {
+                transactions = transactionRepository.findByTypeAndTransactionDateBetween(type, from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            }
         }
         return transactions.stream()
                 .map(transaction -> new TransactionResponse(
@@ -78,13 +88,21 @@ public class TransactionService {
     }
     //CRUD implementation
     //GET ALL + FILTER BY DATE
-    public List<TransactionResponse> getTransactions(LocalDate date){
+    public List<TransactionResponse> getTransactions(TransactionType type, LocalDate date){
         List<Transaction> transactions;
-        if(date == null){
-             transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        if (type == null) {
+            if (date == null) {
+                transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else {
+                transactions = transactionRepository.findByTransactionDate(date, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            }
         }
-        else{
-            transactions = transactionRepository.findByTransactionDate(date,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        else {
+            if (date == null) {
+                transactions = transactionRepository.findByType(type, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            } else {
+                transactions = transactionRepository.findByTypeAndTransactionDate(type, date, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+            }
         }
         return transactions.stream()
                 .map(transaction -> new TransactionResponse(

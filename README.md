@@ -12,21 +12,24 @@ Gradle, Java, Spring Boot, JUnit 5, Mockito, PostgreSQL, Spring Data JPA
 #### Available parameters
 Date format: YYYY-MM-DD (ISO 8601)
 
-| Parameters   | Description                                                      | Example                                              |
-|--------------|------------------------------------------------------------------|------------------------------------------------------|
-| None         | Returns all transactions                                         | `GET /api/transactions`                              |
-| `date`       | Returns transactions from a specific day                         | `GET /api/transactions?date=2026-10-05`              |
-| `from`       | Returns transactions on or after the specified date              | `GET /api/transactions?from=2026-10-01`              |
-| `to`         | Returns transactions on or before the specified date             | `GET /api/transactions?to=2026-10-31`                |
-| `from` + `to`| Returns transactions within the specified date range (inclusive) | `GET /api/transactions?from=2026-10-01&to=2026-10-31` |
+| Parameters    | Description                                                      | Example                                               |
+|---------------|------------------------------------------------------------------|-------------------------------------------------------|
+| None          | Returns all transactions                                         | `GET /api/transactions`                               |
+| `type`        | Returns transactions of specific type [EXPENSE/INCOME]           | `GET /api/transactions?type=EXPENSE`                  |
+| `date`        | Returns transactions from a specific day                         | `GET /api/transactions?date=2026-10-05`               |
+| `from`        | Returns transactions on or after the specified date              | `GET /api/transactions?from=2026-10-01`               |
+| `to`          | Returns transactions on or before the specified date             | `GET /api/transactions?to=2026-10-31`                 |
+| `from` + `to` | Returns transactions within the specified date range (inclusive) | `GET /api/transactions?from=2026-10-01&to=2026-10-31` |
 
 #### All data returned by this endpoint is automatically sorted by transactionDate in descending order, then by id in descending order when transactionDate values are identical.
+#### Type parameter can be used with any other parameters.
 ### Error responses
 
 The API returns `400 Bad Request` when:
 - `date` is combined with `from` or `to`.
 - `from` is later than `to`.
 - A date has an invalid format.
+- `type` is invalid.
 
 ### GET /api/transactions/summary
 #### Available parameters

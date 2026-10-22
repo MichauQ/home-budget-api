@@ -144,7 +144,7 @@ class TransactionServiceTest {
         when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id"))
         )).thenReturn(testFindAllData);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null);
+        List<TransactionResponse> result = transactionService.getTransactions(null,null);
         // then
         assertEquals(2, result.size());
         assertEquals("Test Transaction1",result.get(0).name());
@@ -177,7 +177,7 @@ class TransactionServiceTest {
                 null));
         when(transactionRepository.findByTransactionDate(dateParam, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionsForDate);
         //when
-        List<TransactionResponse> result = transactionService.getTransactions(dateParam);
+        List<TransactionResponse> result = transactionService.getTransactions(null, dateParam);
         //then
         assertEquals(2, result.size());
         assertEquals("Test Transaction1",result.get(0).name());
@@ -193,7 +193,7 @@ class TransactionServiceTest {
         // given
         when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(new ArrayList<>());
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null);
+        List<TransactionResponse> result = transactionService.getTransactions(null,null);
         // then
         assertTrue(result.isEmpty());
         verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
@@ -295,7 +295,7 @@ class TransactionServiceTest {
         ));
         when(transactionRepository.findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionAfter);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(from, null);
+        List<TransactionResponse> result = transactionService.getTransactions(null, from, null);
         // then
         assertEquals(1,result.size());
         assertEquals("After Test Transaction", result.getFirst().name());
@@ -318,7 +318,7 @@ class TransactionServiceTest {
         ));
         when(transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionBefore);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null, to);
+        List<TransactionResponse> result = transactionService.getTransactions(null,null, to);
         // then
         assertEquals(1,result.size());
         assertEquals("Before Test Transaction", result.getFirst().name());
@@ -341,7 +341,7 @@ class TransactionServiceTest {
                 null));
         when(transactionRepository.findByTransactionDateBetween(from,to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionInRange);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(from, to);
+        List<TransactionResponse> result = transactionService.getTransactions(null, from, to);
         // then
         assertEquals(1,result.size());
         assertEquals("In Range Test Transaction", result.getFirst().name());
@@ -388,7 +388,7 @@ class TransactionServiceTest {
         LocalDate from = LocalDate.of(2026, 11, 1);
         LocalDate to = LocalDate.of(2026, 10, 31);
         // when + then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactions(from, to));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactions(null, from, to));
         assertEquals(
                 "From date cannot be after to date",
                 exception.getMessage()
