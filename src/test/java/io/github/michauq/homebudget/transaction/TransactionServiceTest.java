@@ -11,7 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -128,6 +128,7 @@ class TransactionServiceTest {
     @Test
     void shouldReturnAllTransactions() {
         // given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         List<Transaction> testFindAllData = new ArrayList<>();
         testFindAllData.add(new Transaction("Test Transaction1",
                 BigDecimal.valueOf(20),
@@ -141,26 +142,27 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 9, 18),
                 null));
-        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id"))
-        )).thenReturn(testFindAllData);
+        Page<Transaction> transactionPage = new PageImpl<>(testFindAllData,pageable,5);
+        when(transactionRepository.findAll(pageable)).thenReturn(transactionPage);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null,null);
+        Page<TransactionResponse> result = transactionService.getTransactions(null,null, pageable);
         // then
-        assertEquals(2, result.size());
-        assertEquals("Test Transaction1",result.get(0).name());
-        assertEquals(BigDecimal.valueOf(20),result.get(0).amount());
-        assertEquals(TransactionType.EXPENSE,result.get(0).type());
-        assertEquals(LocalDate.of(2026, 8, 17),result.get(0).transactionDate());
-        assertEquals("Test Transaction2",result.get(1).name());
-        assertEquals(BigDecimal.valueOf(35),result.get(1).amount());
-        assertEquals(TransactionType.EXPENSE,result.get(1).type());
-        assertEquals(LocalDate.of(2026, 9, 18),result.get(1).transactionDate());
+        assertEquals(2, result.getContent().size());
+        assertEquals("Test Transaction1",result.getContent().get(0).name());
+        assertEquals(BigDecimal.valueOf(20),result.getContent().get(0).amount());
+        assertEquals(TransactionType.EXPENSE,result.getContent().get(0).type());
+        assertEquals(LocalDate.of(2026, 8, 17),result.getContent().get(0).transactionDate());
+        assertEquals("Test Transaction2",result.getContent().get(1).name());
+        assertEquals(BigDecimal.valueOf(35),result.getContent().get(1).amount());
+        assertEquals(TransactionType.EXPENSE,result.getContent().get(1).type());
+        assertEquals(LocalDate.of(2026, 9, 18),result.getContent().get(1).transactionDate());
 
-        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        verify(transactionRepository).findAll(pageable);
     }
     @Test
     void shouldReturnTransactionsFilteredByDate(){
         //given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate dateParam = LocalDate.of(2026,10,5);
         List<Transaction> transactionsForDate = new ArrayList<>();
         transactionsForDate.add(new Transaction("Test Transaction1",
@@ -175,28 +177,29 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findByTransactionDate(dateParam, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionsForDate);
+        Page<Transaction> transactionPage = new PageImpl<>(transactionsForDate,pageable,5);
+        when(transactionRepository.findByTransactionDate(dateParam, pageable)).thenReturn(transactionPage);
         //when
-        List<TransactionResponse> result = transactionService.getTransactions(null, dateParam);
+        Page<TransactionResponse> result = transactionService.getTransactions(null, dateParam, pageable);
         //then
-        assertEquals(2, result.size());
-        assertEquals("Test Transaction1",result.get(0).name());
-        assertEquals(LocalDate.of(2026, 10, 5),result.get(0).transactionDate());
-        assertEquals("Test Transaction2",result.get(1).name());
-        assertEquals(LocalDate.of(2026, 10, 5),result.get(1).transactionDate());
-        verify(transactionRepository).findByTransactionDate(dateParam, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        verify(transactionRepository,never()).findAll();
+        assertEquals(2, result.getContent().size());
+        assertEquals("Test Transaction1",result.getContent().get(0).name());
+        assertEquals(LocalDate.of(2026, 10, 5),result.getContent().get(0).transactionDate());
+        assertEquals("Test Transaction2",result.getContent().get(1).name());
+        assertEquals(LocalDate.of(2026, 10, 5),result.getContent().get(1).transactionDate());
+        verify(transactionRepository).findByTransactionDate(dateParam, pageable);
     }
 
     @Test
     void shouldReturnEmptyListWhenNoTransactionsExist(){
         // given
-        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(new ArrayList<>());
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        when(transactionRepository.findAll(pageable)).thenReturn(Page.empty(pageable));
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null,null);
+        Page<TransactionResponse> result = transactionService.getTransactions(null,null,pageable);
         // then
         assertTrue(result.isEmpty());
-        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        verify(transactionRepository).findAll(pageable);
     }
     @Test
     void shouldDeleteTransactionWhenExists() {
@@ -284,6 +287,7 @@ class TransactionServiceTest {
     @Test
     void shouldReturnTransactionsFromGivenDate() {
         // given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026, 10, 15);
         List<Transaction> transactionAfter = List.of(new Transaction(
                 "After Test Transaction",
@@ -293,20 +297,21 @@ class TransactionServiceTest {
                 LocalDate.of(2026, 10, 16),
                 null
         ));
-        when(transactionRepository.findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionAfter);
+        Page<Transaction> transactionPage = new PageImpl<>(transactionAfter,pageable,5);
+        when(transactionRepository.findByTransactionDateGreaterThanEqual(from, pageable)).thenReturn(transactionPage);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null, from, null);
+        Page<TransactionResponse> result = transactionService.getTransactions(null, from,null, pageable);
         // then
-        assertEquals(1,result.size());
-        assertEquals("After Test Transaction", result.getFirst().name());
+        assertEquals(1,result.getContent().size());
+        assertEquals("After Test Transaction", result.getContent().getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 16),
-                result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        verify(transactionRepository, never()).findAll();
+                result.getContent().getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateGreaterThanEqual(from, pageable);
     }
     @Test
     void shouldReturnTransactionsToGivenDate() {
         // given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate to = LocalDate.of(2026, 10, 15);
         List<Transaction> transactionBefore = List.of(new Transaction(
                 "Before Test Transaction",
@@ -316,20 +321,21 @@ class TransactionServiceTest {
                 LocalDate.of(2026, 10, 1),
                 null
         ));
-        when(transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionBefore);
+        Page<Transaction> transactionPage = new PageImpl<>(transactionBefore,pageable,5);
+        when(transactionRepository.findByTransactionDateLessThanEqual(to, pageable)).thenReturn(transactionPage);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null,null, to);
+        Page<TransactionResponse> result = transactionService.getTransactions(null,null, to, pageable);
         // then
-        assertEquals(1,result.size());
-        assertEquals("Before Test Transaction", result.getFirst().name());
+        assertEquals(1,result.getContent().size());
+        assertEquals("Before Test Transaction", result.getContent().getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 1),
-                result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        verify(transactionRepository, never()).findAll();
+                result.getContent().getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateLessThanEqual(to, pageable);
     }
     @Test
     void shouldReturnTransactionsWithinDateRange() {
         // given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026, 10, 1);
         LocalDate to = LocalDate.of(2026, 10, 31);
         List<Transaction> transactionInRange = List.of(new Transaction(
@@ -339,20 +345,21 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findByTransactionDateBetween(from,to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(transactionInRange);
+        Page<Transaction> transactionPage = new PageImpl<>(transactionInRange,pageable,5);
+        when(transactionRepository.findByTransactionDateBetween(from,to, pageable)).thenReturn(transactionPage);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null, from, to);
+        Page<TransactionResponse> result = transactionService.getTransactions(null, from, to, pageable);
         // then
-        assertEquals(1,result.size());
-        assertEquals("In Range Test Transaction", result.getFirst().name());
+        assertEquals(1,result.getContent().size());
+        assertEquals("In Range Test Transaction", result.getContent().getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 5),
-                result.getFirst().transactionDate());
-        verify(transactionRepository).findByTransactionDateBetween(from,to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
-        verify(transactionRepository, never()).findAll();
+                result.getContent().getFirst().transactionDate());
+        verify(transactionRepository).findByTransactionDateBetween(from,to, pageable);
     }
     @Test
     void shouldReturnAllTransactionsWhenBothDatesAreNull(){
         //given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         List<Transaction> allTransactions = List.of(new Transaction(
                 "Transaction 1",
                 BigDecimal.valueOf(20),
@@ -367,28 +374,30 @@ class TransactionServiceTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 5),
                 null));
-        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(allTransactions);
+        Page<Transaction> transactionPage = new PageImpl<>(allTransactions,pageable,5);
+        when(transactionRepository.findAll(pageable)).thenReturn(transactionPage);
         //when
-        List<TransactionResponse> result = transactionService.getTransactions(null, null);
+        Page<TransactionResponse> result = transactionService.getTransactions(null,null, null, pageable);
         //then
-        assertEquals(2,result.size());
-        assertEquals("Transaction 1", result.getFirst().name());
+        assertEquals(2,result.getContent().size());
+        assertEquals("Transaction 1", result.getContent().getFirst().name());
         assertEquals(LocalDate.of(2026, 10, 6),
-                result.getFirst().transactionDate());
-        assertEquals("Transaction 2", result.getLast().name());
+                result.getContent().getFirst().transactionDate());
+        assertEquals("Transaction 2", result.getContent().getLast().name());
         assertEquals(LocalDate.of(2026, 10, 5),
-                result.getLast().transactionDate());
-        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                result.getContent().getLast().transactionDate());
+        verify(transactionRepository).findAll(pageable);
         verify(transactionRepository, never())
                 .findByTransactionDateBetween(any(), any(), any());
     }
     @Test
     void shouldThrowExceptionWhenFromDateIsAfterToDate() {
         // given
+        Pageable pageable = PageRequest.of(0,2,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026, 11, 1);
         LocalDate to = LocalDate.of(2026, 10, 31);
         // when + then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactions(null, from, to));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> transactionService.getTransactions(null, from, to, pageable));
         assertEquals(
                 "From date cannot be after to date",
                 exception.getMessage()
@@ -398,6 +407,7 @@ class TransactionServiceTest {
     @Test
     void shouldReturnTransactionsSortedByDateDescendingWhenNoFiltersProvided() {
         // given
+        Pageable pageable = PageRequest.of(0,3,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         List<Transaction> allTransactions = List.of(
                 new Transaction(
                         "Transaction 1",
@@ -420,15 +430,16 @@ class TransactionServiceTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 1),
                         null));
-        when(transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")))).thenReturn(allTransactions);
+        Page<Transaction> transactionPage = new PageImpl<>(allTransactions,pageable,5);
+        when(transactionRepository.findAll(pageable)).thenReturn(transactionPage);
         // when
-        List<TransactionResponse> result = transactionService.getTransactions(null, null);
+        Page<TransactionResponse> result = transactionService.getTransactions(null, null, pageable);
         // then
-        assertEquals(3,result.size());
-        assertEquals(LocalDate.of(2026,10,31),result.getFirst().transactionDate());
-        assertEquals(LocalDate.of(2026,10,15),result.get(1).transactionDate());
-        assertEquals(LocalDate.of(2026,10,1),result.getLast().transactionDate());
-        verify(transactionRepository).findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        assertEquals(3,result.getContent().size());
+        assertEquals(LocalDate.of(2026,10,31),result.getContent().getFirst().transactionDate());
+        assertEquals(LocalDate.of(2026,10,15),result.getContent().get(1).transactionDate());
+        assertEquals(LocalDate.of(2026,10,1),result.getContent().getLast().transactionDate());
+        verify(transactionRepository).findAll(pageable);
     }
     @Test
     void shouldReturnTransactionSummaryForDateRange(){
@@ -462,5 +473,60 @@ class TransactionServiceTest {
         assertEquals(BigDecimal.valueOf(120),result.balance());
         verify(transactionRepository).sumAmountByTypeAndFromDate(TransactionType.INCOME, from);
         verify(transactionRepository).sumAmountByTypeAndFromDate(TransactionType.EXPENSE, from);
+    }
+    @Test
+    void shouldReturnPageOfTransactionResponsesFilteredByType() {
+        // given
+        Pageable pageable = PageRequest.of(
+                0,
+                2,
+                Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id"))
+        );
+        Transaction testTransaction1 = new Transaction(
+                "TEST EXPENSE 1",
+                BigDecimal.valueOf(100),
+                TransactionType.EXPENSE,
+                TransactionCategory.GROCERIES,
+                LocalDate.of(2026, 10, 1),
+                null
+        );
+        Transaction testTransaction2 = new Transaction(
+                "TEST EXPENSE 2",
+                BigDecimal.valueOf(50),
+                TransactionType.EXPENSE,
+                TransactionCategory.TRANSPORT,
+                LocalDate.of(2026, 10, 5),
+                null
+        );
+        PageImpl<Transaction> testTransactionPage = new PageImpl<>(List.of(testTransaction1,testTransaction2),pageable,5);
+
+        when(transactionRepository.findByType(TransactionType.EXPENSE, pageable)).thenReturn(testTransactionPage);
+        // when
+        Page<TransactionResponse> result = transactionService.getTransactions(TransactionType.EXPENSE, null, pageable);
+        // then
+        assertEquals(2,result.getContent().size());
+        assertEquals(5,result.getTotalElements());
+        assertEquals(3,result.getTotalPages());
+        assertEquals(0,result.getNumber());
+        assertEquals("TEST EXPENSE 1", result.getContent().getFirst().name());
+        assertEquals("TEST EXPENSE 2", result.getContent().getLast().name());
+        verify(transactionRepository).findByType(TransactionType.EXPENSE, pageable);
+    }
+    @Test
+    void shouldReturnEmptyPageWhenNoTransactionsMatchType() {
+        // given
+        Pageable pageable = PageRequest.of(
+                0,
+                2,
+                Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id"))
+        );
+        when(transactionRepository.findByType(TransactionType.EXPENSE, pageable)).thenReturn(Page.empty(pageable));
+        // when
+        Page<TransactionResponse> result = transactionService.getTransactions(TransactionType.EXPENSE, null, pageable);
+        // then
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getTotalElements());
+        assertEquals(0, result.getTotalPages());
+        verify(transactionRepository).findByType(TransactionType.EXPENSE, pageable);
     }
 }

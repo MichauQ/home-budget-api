@@ -5,6 +5,8 @@ import io.github.michauq.homebudget.transaction.dto.CreateTransactionRequest;
 import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
 import io.github.michauq.homebudget.transaction.dto.TransactionSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +23,19 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    public TransactionSummaryResponse getBalanceSummary(){
+    private TransactionResponse toResponse(Transaction transaction) {
+        return new TransactionResponse(
+                transaction.getId(),
+                transaction.getName(),
+                transaction.getAmount(),
+                transaction.getType(),
+                transaction.getCategory(),
+                transaction.getTransactionDate(),
+                transaction.getTransactionTime()
+        );
+    }
+
+        public TransactionSummaryResponse getBalanceSummary(){
         BigDecimal income = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.INCOME)).orElse(BigDecimal.ZERO);
         BigDecimal expenses = Optional.ofNullable(transactionRepository.sumAmountByType(TransactionType.EXPENSE)).orElse(BigDecimal.ZERO);
         return new TransactionSummaryResponse(income,expenses, income.subtract(expenses));
@@ -29,11 +43,11 @@ public class TransactionService {
     public TransactionSummaryResponse getBalanceSummary(LocalDate from, LocalDate to){
         BigDecimal income;
         BigDecimal expenses;
-        if(to == null){
+        if(to == null&& from!=null){
             income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.INCOME, from)).orElse(BigDecimal.ZERO);
             expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndFromDate(TransactionType.EXPENSE, from)).orElse(BigDecimal.ZERO);
         }
-        else if(from == null){
+        else if(from == null&& to!=null){
             income = Optional.ofNullable(transactionRepository.sumAmountByTypeAndToDate(TransactionType.INCOME,to)).orElse(BigDecimal.ZERO);
             expenses = Optional.ofNullable(transactionRepository.sumAmountByTypeAndToDate(TransactionType.EXPENSE,to)).orElse(BigDecimal.ZERO);
         }
@@ -48,85 +62,59 @@ public class TransactionService {
     }
 
     //GET ALL + FILTER BY DATE RANGE
-    public List<TransactionResponse> getTransactions(TransactionType type, LocalDate from, LocalDate to){
-        List<Transaction> transactions;
+    public Page<TransactionResponse> getTransactions(TransactionType type, LocalDate from, LocalDate to,Pageable pageable){
+        Page<Transaction> transactions;
         if(from != null && to != null && from.isAfter(to)){
             throw new IllegalArgumentException("From date cannot be after to date");
         }
         if(type == null) {
             if (from == null && to == null) {
-                transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findAll(pageable);
             } else if (to == null) {
-                transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTransactionDateGreaterThanEqual(from, pageable);
             } else if (from == null) {
-                transactions = transactionRepository.findByTransactionDateLessThanEqual(to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTransactionDateLessThanEqual(to,pageable);
             } else {
-                transactions = transactionRepository.findByTransactionDateBetween(from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTransactionDateBetween(from, to, pageable);
             }
         }
         else {
             if (from == null && to == null) {
-                transactions = transactionRepository.findByType(type, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByType(type, pageable);
             } else if (to == null) {
-                transactions = transactionRepository.findByTypeAndTransactionDateGreaterThanEqual(type, from, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTypeAndTransactionDateGreaterThanEqual(type, from, pageable);
             } else if (from == null) {
-                transactions = transactionRepository.findByTypeAndTransactionDateLessThanEqual(type, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTypeAndTransactionDateLessThanEqual(type, to, pageable);
             } else {
-                transactions = transactionRepository.findByTypeAndTransactionDateBetween(type, from, to, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTypeAndTransactionDateBetween(type, from, to, pageable);
             }
         }
-        return transactions.stream()
-                .map(transaction -> new TransactionResponse(
-                        transaction.getId(),
-                        transaction.getName(),
-                        transaction.getAmount(),
-                        transaction.getType(),
-                        transaction.getCategory(),
-                        transaction.getTransactionDate(),
-                        transaction.getTransactionTime()))
-                .toList();
+        return transactions.map(this::toResponse);
     }
     //CRUD implementation
     //GET ALL + FILTER BY DATE
-    public List<TransactionResponse> getTransactions(TransactionType type, LocalDate date){
-        List<Transaction> transactions;
+    public Page<TransactionResponse> getTransactions(TransactionType type, LocalDate date, Pageable pageable){
+        Page<Transaction> transactions;
         if (type == null) {
             if (date == null) {
-                transactions = transactionRepository.findAll(Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findAll(pageable);
             } else {
-                transactions = transactionRepository.findByTransactionDate(date, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTransactionDate(date, pageable);
             }
         }
         else {
             if (date == null) {
-                transactions = transactionRepository.findByType(type, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByType(type, pageable);
             } else {
-                transactions = transactionRepository.findByTypeAndTransactionDate(type, date, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+                transactions = transactionRepository.findByTypeAndTransactionDate(type, date, pageable);
             }
         }
-        return transactions.stream()
-                .map(transaction -> new TransactionResponse(
-                        transaction.getId(),
-                        transaction.getName(),
-                        transaction.getAmount(),
-                        transaction.getType(),
-                        transaction.getCategory(),
-                        transaction.getTransactionDate(),
-                        transaction.getTransactionTime()))
-                .toList();
+        return transactions.map(this::toResponse);
     }
     //GET BY ID
     public Optional<TransactionResponse> getTransaction(Long id){
         Optional<Transaction> foundTransaction = transactionRepository.findById(id);
-        return foundTransaction.map(transaction -> new TransactionResponse(
-                transaction.getId(),
-                transaction.getName(),
-                transaction.getAmount(),
-                transaction.getType(),
-                transaction.getCategory(),
-                transaction.getTransactionDate(),
-                transaction.getTransactionTime()
-        ));
+        return foundTransaction.map(this::toResponse);
     }
     // (PUT) UPDATE
     public Optional<TransactionResponse> updateTransaction(Long id, CreateTransactionRequest request){

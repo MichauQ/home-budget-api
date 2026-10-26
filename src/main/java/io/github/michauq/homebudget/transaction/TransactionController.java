@@ -6,6 +6,10 @@ import io.github.michauq.homebudget.transaction.dto.TransactionResponse;
 import io.github.michauq.homebudget.transaction.dto.TransactionSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +65,7 @@ public class TransactionController {
 
 
     @GetMapping
-    public List<TransactionResponse> getTransactions(
+    public Page<TransactionResponse> getTransactions(
             @RequestParam(required = false)
             TransactionType type,
             @RequestParam(required = false)
@@ -72,16 +76,25 @@ public class TransactionController {
             LocalDate from,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate to){
+            LocalDate to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        if(page < 0 || size < 1){
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid pagination parameters"
+            );
+        }
+        Pageable pageable = PageRequest.of(page,size,Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         if (date != null && (from != null || to != null)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid query parameters"
             );
         } else if (date != null) {
-            return transactionService.getTransactions(type, date);
+            return transactionService.getTransactions(type, date, pageable);
         }
-        return transactionService.getTransactions(type, from, to);
+        return transactionService.getTransactions(type, from, to, pageable);
     }
 
     @PostMapping

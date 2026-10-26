@@ -2,6 +2,8 @@ package io.github.michauq.homebudget.transaction;
 
 import io.github.michauq.homebudget.transaction.dto.CategoryExpenseSummaryResponse;
 import io.github.michauq.homebudget.transaction.enums.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,17 +39,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             \s""")
     List<CategoryExpenseSummaryResponse> sumExpenseByCategory(@Param("type") TransactionType type);
 
-    List<Transaction> findByType(TransactionType type, Sort sort);
+    Page<Transaction> findByType(TransactionType type, Pageable pageable);
 
-    List<Transaction> findByTransactionDate(LocalDate transactionDate, Sort sort);
-    List<Transaction> findByTypeAndTransactionDate(TransactionType type, LocalDate transactionDate, Sort sort);
+    Page<Transaction> findByTransactionDate(LocalDate transactionDate, Pageable pageable);
+    Page<Transaction> findByTypeAndTransactionDate(TransactionType type, LocalDate transactionDate, Pageable pageable);
 
-    List<Transaction> findByTransactionDateBetween(LocalDate from, LocalDate to, Sort sort);
-    List<Transaction> findByTypeAndTransactionDateBetween(TransactionType type, LocalDate from, LocalDate to, Sort sort);
+    Page<Transaction> findByTransactionDateBetween(LocalDate from, LocalDate to, Pageable pageable);
+    Page<Transaction> findByTypeAndTransactionDateBetween(TransactionType type, LocalDate from, LocalDate to, Pageable pageable);
 
-    List<Transaction> findByTransactionDateGreaterThanEqual(LocalDate from, Sort sort);
-    List<Transaction> findByTypeAndTransactionDateGreaterThanEqual(TransactionType type, LocalDate from, Sort sort);
+    Page<Transaction> findByTransactionDateGreaterThanEqual(LocalDate from, Pageable pageable);
+    Page<Transaction> findByTypeAndTransactionDateGreaterThanEqual(TransactionType type, LocalDate from, Pageable pageable);
 
-    List<Transaction> findByTransactionDateLessThanEqual(LocalDate to, Sort sort);
-    List<Transaction> findByTypeAndTransactionDateLessThanEqual(TransactionType type, LocalDate to, Sort sort);
+    Page<Transaction> findByTransactionDateLessThanEqual(LocalDate to, Pageable pageable);
+    Page<Transaction> findByTypeAndTransactionDateLessThanEqual(TransactionType type, LocalDate to, Pageable pageable);
 }

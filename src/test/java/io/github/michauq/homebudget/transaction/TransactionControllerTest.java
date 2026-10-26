@@ -8,6 +8,7 @@ import io.github.michauq.homebudget.transaction.enums.TransactionType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -88,6 +89,7 @@ class TransactionControllerTest {
     @Test
     void shouldReturnTransactions() throws Exception{
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         List<TransactionResponse> response = List.of(
                 new TransactionResponse(
                 1L,
@@ -108,20 +110,27 @@ class TransactionControllerTest {
                         null
                 )
         );
-        when(transactionService.getTransactions(null,null, null)).thenReturn(response);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(response,pageable,5);
+        when(transactionService.getTransactions(null,null,null, pageable)).thenReturn(transactionPage);
         //when
-        mockMvc.perform(get("/api/transactions"))
+        mockMvc.perform(get("/api/transactions")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Controller transaction test data2"));
-        verify(transactionService).getTransactions(null,null, null);
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Controller transaction test data1"))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].name").value("Controller transaction test data2"))
+                .andExpect(jsonPath("$.totalElements").value(5))
+                .andExpect(jsonPath("$.totalPages").value(3))
+                .andExpect(jsonPath("$.number").value(0));
+        verify(transactionService).getTransactions(null,null, null, pageable);
     }
     @Test
     void shouldReturnTransactionsFilteredByDate() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate dateParam = LocalDate.of(2026,10,5);
         List<TransactionResponse> response = List.of(new TransactionResponse(
                         1L,
@@ -132,15 +141,18 @@ class TransactionControllerTest {
                         LocalDate.of(2026,10,5),
                         null
                 ));
-        when(transactionService.getTransactions(null, dateParam)).thenReturn(response);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(response,pageable,5);
+        when(transactionService.getTransactions(null, dateParam, pageable)).thenReturn(transactionPage);
         //when
-        mockMvc.perform(get("/api/transactions?date=2026-10-05"))
+        mockMvc.perform(get("/api/transactions?date=2026-10-05")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Controller transaction test data1"))
-                .andExpect(jsonPath("$[0].transactionDate").value(dateParam.toString()));
-        verify(transactionService).getTransactions(null, dateParam);
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Controller transaction test data1"))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(dateParam.toString()));
+        verify(transactionService).getTransactions(null, dateParam, pageable);
     }
     @Test
     void shouldReturnBadRequestWhenDateParameterIsInvalid() throws Exception {
@@ -299,20 +311,24 @@ class TransactionControllerTest {
     @Test
     void shouldReturnBadRequestWhenFromIsAfterTo() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026,10,31);
         LocalDate to = LocalDate.of(2026,10,15);
-        when(transactionService.getTransactions(null, from, to)).thenThrow(IllegalArgumentException.class);
+        when(transactionService.getTransactions(null, from, to, pageable)).thenThrow(IllegalArgumentException.class);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-31")
-                        .param("to", "2026-10-15"))
+                        .param("to", "2026-10-15")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isBadRequest());
-        verify(transactionService).getTransactions(null, from, to);
+        verify(transactionService).getTransactions(null, from, to, pageable);
     }
     @Test
     void shouldReturnTransactionsWithinDateRange() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026,10,1);
         LocalDate to = LocalDate.of(2026,10,31);
         List<TransactionResponse> testTransactions = List.of(
@@ -332,25 +348,29 @@ class TransactionControllerTest {
                 TransactionCategory.OTHER,
                 LocalDate.of(2026, 10, 17),
                 null));
-        when(transactionService.getTransactions(null, from, to)).thenReturn(testTransactions);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions,pageable,5);
+        when(transactionService.getTransactions(null, from, to, pageable)).thenReturn(transactionPage);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-01")
-                        .param("to", "2026-10-31"))
+                        .param("to", "2026-10-31")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
-                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
-                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(null, from, to);
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$.content[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(null, from, to, pageable);
     }
     @Test
     void shouldReturnTransactionsFromGivenDate() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026,10,1);
         List<TransactionResponse> testTransactions = List.of(
                 new TransactionResponse(
@@ -369,24 +389,28 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 17),
                         null));
-        when(transactionService.getTransactions(null, from, null)).thenReturn(testTransactions);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions, pageable,5);
+        when(transactionService.getTransactions(null, from, null, pageable)).thenReturn(transactionPage);
         //when
         mockMvc.perform(get("/api/transactions")
-                        .param("from", "2026-10-01"))
+                        .param("from", "2026-10-01")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
-                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
-                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(null, from,null);
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$.content[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(null, from,null, pageable);
     }
     @Test
     void shouldReturnTransactionsToGivenDate() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate to = LocalDate.of(2026,10,31);
         List<TransactionResponse> testTransactions = List.of(
                 new TransactionResponse(
@@ -405,24 +429,28 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 17),
                         null));
-        when(transactionService.getTransactions(null,null, to)).thenReturn(testTransactions);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions, pageable,5);
+        when(transactionService.getTransactions(null,null, to, pageable)).thenReturn(transactionPage);
         //when
         mockMvc.perform(get("/api/transactions")
-                        .param("to", "2026-10-31"))
+                        .param("to", "2026-10-31")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
-                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
-                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
-        verify(transactionService).getTransactions(null, null, to);
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$.content[1].transactionDate").value(LocalDate.of(2026, 10, 17).toString()));
+        verify(transactionService).getTransactions(null, null, to, pageable);
     }
     @Test
     void shouldReturnTransactionsWhenDateRangeIsSingleDay() throws Exception {
         //given
+        Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate sameDate = LocalDate.of(2026,10,2);
         List<TransactionResponse> testTransactions = List.of(
                 new TransactionResponse(
@@ -441,25 +469,29 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 2),
                         null));
-        when(transactionService.getTransactions(null, sameDate, sameDate)).thenReturn(testTransactions);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions, pageable,5);
+        when(transactionService.getTransactions(null, sameDate, sameDate, pageable)).thenReturn(transactionPage);
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-02")
-                        .param("to", "2026-10-02"))
+                        .param("to", "2026-10-02")
+                        .param("page","0")
+                        .param("size", "2"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Transaction within range 1"))
-                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Transaction within range 2"))
-                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 2).toString()));
-        verify(transactionService).getTransactions(null, sameDate,sameDate);
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].name").value("Transaction within range 1"))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(LocalDate.of(2026, 10, 2).toString()))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].name").value("Transaction within range 2"))
+                .andExpect(jsonPath("$.content[1].transactionDate").value(LocalDate.of(2026, 10, 2).toString()));
+        verify(transactionService).getTransactions(null, sameDate, sameDate, pageable);
     }
     @Test
     void shouldReturnTransactionsSortedByDateDescendingWhenNoFiltersProvided() throws Exception {
         // given
+        Pageable pageable = PageRequest.of(0,3, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         List<TransactionResponse> testTransactions = List.of(
                 new TransactionResponse(
                         1L,
@@ -485,19 +517,22 @@ class TransactionControllerTest {
                         TransactionCategory.OTHER,
                         LocalDate.of(2026, 10, 1),
                         null));
-        when(transactionService.getTransactions(null, null, null)).thenReturn(testTransactions);
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions, pageable,5);
+        when(transactionService.getTransactions(null, null,null, pageable)).thenReturn(transactionPage);
         //when
-        mockMvc.perform(get("/api/transactions"))
+        mockMvc.perform(get("/api/transactions")
+                        .param("page","0")
+                        .param("size", "3"))
                 //then
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].transactionDate").value(LocalDate.of(2026, 10, 31).toString()))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].transactionDate").value(LocalDate.of(2026, 10, 15).toString()))
-                .andExpect(jsonPath("$[2].id").value(3L))
-                .andExpect(jsonPath("$[2].transactionDate").value(LocalDate.of(2026, 10, 1).toString()));
-        verify(transactionService).getTransactions(null,null, null);
+                .andExpect(jsonPath("$.content.length()").value(3))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].transactionDate").value(LocalDate.of(2026, 10, 31).toString()))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].transactionDate").value(LocalDate.of(2026, 10, 15).toString()))
+                .andExpect(jsonPath("$.content[2].id").value(3L))
+                .andExpect(jsonPath("$.content[2].transactionDate").value(LocalDate.of(2026, 10, 1).toString()));
+        verify(transactionService).getTransactions(null,null, null, pageable);
     }
     @Test
     void shouldReturnTransactionSummaryForDateRange() throws Exception {
@@ -522,9 +557,6 @@ class TransactionControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenSummaryDateRangeIsReversed() throws Exception{
-        //given
-        LocalDate from = LocalDate.of(2026,10,31);
-        LocalDate to = LocalDate.of(2026,10,1);
         //when
         mockMvc.perform(get("/api/transactions/summary?from=2026-10-31&to=2026-10-01"))
                 //then
@@ -558,5 +590,82 @@ class TransactionControllerTest {
                 //then
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(transactionService);
+    }
+    @Test
+    void shouldReturnBadRequestWhenPageIsNegative() throws Exception {
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("page","-1")
+                        .param("size", "3"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
+
+    }
+    @Test
+    void shouldReturnBadRequestWhenSizeIsZero() throws Exception {
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("page","0")
+                        .param("size", "0"))
+                //then
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(transactionService);
+
+    }
+    @Test
+    void shouldReturnEmptyPageWhenPageIsOutOfRange() throws Exception {
+        //given
+        Pageable pageable = PageRequest.of(99999,3, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        when(transactionService.getTransactions(null,null,null, pageable)).thenReturn(Page.empty(pageable));
+        //when
+        mockMvc.perform(get("/api/transactions")
+                        .param("page","99999")
+                        .param("size", "3"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(0));
+        verify(transactionService).getTransactions(null,null, null, pageable);
+    }
+    @Test
+    void shouldUseDefaultPaginationWhenParametersAreMissing() throws Exception {
+        //given
+        Pageable pageable = PageRequest.of(0,10, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
+        List<TransactionResponse> testTransactions = List.of(
+                new TransactionResponse(
+                        1L,
+                        "Transaction sorted 1",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 31),
+                        null),
+                new TransactionResponse(
+                        2L,
+                        "Transaction sorted 2",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 15),
+                        null),
+                new TransactionResponse(
+                        3L,
+                        "Transaction sorted 3",
+                        BigDecimal.valueOf(25),
+                        TransactionType.EXPENSE,
+                        TransactionCategory.OTHER,
+                        LocalDate.of(2026, 10, 1),
+                        null));
+        Page<TransactionResponse> transactionPage = new PageImpl<>(testTransactions, pageable,3);
+        when(transactionService.getTransactions(null, null, null, pageable)).thenReturn(transactionPage);
+        //when
+        mockMvc.perform(get("/api/transactions"))
+                //then
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.number").value(0))
+                .andExpect(jsonPath("$.content.length()").value(3));
+        verify(transactionService).getTransactions(null,null, null, pageable);
     }
 }

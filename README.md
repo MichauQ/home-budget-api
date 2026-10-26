@@ -9,7 +9,19 @@ Users can check their transaction balance, view income and expense summaries, an
 Gradle, Java, Spring Boot, JUnit 5, Mockito, PostgreSQL, Spring Data JPA
 ## API
 ### GET /api/transactions
-#### Available parameters
+#### Pagination parameters
+| Parameters   | Description                     | Default |
+|--------------|---------------------------------|---------|
+| `page`       | Zero-based page index           | 0       |
+| `size`       | Number of transactions per page | 10      |
+
+#### Example
+
+```http
+GET /api/transactions?type=EXPENSE&from=2026-10-01&to=2026-10-31&page=1&size=5
+```
+
+#### Available filtering parameters
 Date format: YYYY-MM-DD (ISO 8601)
 
 | Parameters    | Description                                                      | Example                                               |
@@ -21,8 +33,19 @@ Date format: YYYY-MM-DD (ISO 8601)
 | `to`          | Returns transactions on or before the specified date             | `GET /api/transactions?to=2026-10-31`                 |
 | `from` + `to` | Returns transactions within the specified date range (inclusive) | `GET /api/transactions?from=2026-10-01&to=2026-10-31` |
 
-#### All data returned by this endpoint is automatically sorted by transactionDate in descending order, then by id in descending order when transactionDate values are identical.
-#### Type parameter can be used with any other parameters.
+#### Sorting
+All data returned by this endpoint is automatically sorted by transactionDate in descending order, then by id in descending order when transactionDate values are identical.
+
+#### The type filter can be combined with any valid date filter configuration.
+
+### Response Structure
+The endpoint returns a paginated response containing:
+- content — transactions on the requested page
+- totalElements — total number of matching transactions
+- totalPages — total number of pages
+- number — current page index
+- size — requested page size
+
 ### Error responses
 
 The API returns `400 Bad Request` when:
@@ -30,17 +53,21 @@ The API returns `400 Bad Request` when:
 - `from` is later than `to`.
 - A date has an invalid format.
 - `type` is invalid.
+- Negative page parameter value.
+- size parameter value less than 1.
+
+Requesting a page outside the available range returns 200 OK with an empty content array.
 
 ### GET /api/transactions/summary
 #### Available parameters
 Date format: YYYY-MM-DD (ISO 8601)
 
-| Parameters   | Description                                                 | Example                                                       |
-|--------------|-------------------------------------------------------------|---------------------------------------------------------------|
-| None         | Returns the summary for all transactions.                   | `GET /api/transactions/summary`                               |
-| `from`       | Returns summary on or after the specified date              | `GET /api/transactions/summary?from=2026-10-01`               |
-| `to`         | Returns summary on or before the specified date             | `GET /api/transactions/summary?to=2026-10-31`                 |
-| `from` + `to`| Returns summary within the specified date range (inclusive) | `GET /api/transactions/summary?from=2026-10-01&to=2026-10-31` |
+| Parameters    | Description                                                 | Example                                                       |
+|---------------|-------------------------------------------------------------|---------------------------------------------------------------|
+| None          | Returns the summary for all transactions.                   | `GET /api/transactions/summary`                               |
+| `from`        | Returns summary on or after the specified date              | `GET /api/transactions/summary?from=2026-10-01`               |
+| `to`          | Returns summary on or before the specified date             | `GET /api/transactions/summary?to=2026-10-31`                 |
+| `from` + `to` | Returns summary within the specified date range (inclusive) | `GET /api/transactions/summary?from=2026-10-01&to=2026-10-31` |
 
 ### Error responses
 The API returns `400 Bad Request` when:
