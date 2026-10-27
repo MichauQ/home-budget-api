@@ -12,7 +12,6 @@ import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.client.HttpClientErrorException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -82,7 +81,13 @@ class TransactionControllerTest {
         //when
         mockMvc.perform(get("/api/transactions/999"))
                 //then
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Transaction with id 999 not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/transactions/999"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verify(transactionService).getTransaction(999L);
     }
 
@@ -159,7 +164,12 @@ class TransactionControllerTest {
         //when
         mockMvc.perform(get("/api/transactions?date=abc"))
                 //then
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message")
+                        .value("Invalid value for parameter: date"))
+                .andExpect(jsonPath("$.path").value("/api/transactions"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verifyNoInteractions(transactionService);
     }
 
@@ -263,7 +273,13 @@ class TransactionControllerTest {
                         }
                         """))
                 //then
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Transaction with id 999 not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/transactions/999"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verify(transactionService).updateTransaction(eq(999L),any(CreateTransactionRequest.class));
     }
 
@@ -285,7 +301,13 @@ class TransactionControllerTest {
         //when
         mockMvc.perform(delete("/api/transactions/999"))
                 //then
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message")
+                        .value("Transaction with id 999 not found"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/transactions/999"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verify(transactionService).deleteTransaction(999L);
     }
     @Test
@@ -314,7 +336,7 @@ class TransactionControllerTest {
         Pageable pageable = PageRequest.of(0,2, Sort.by(Sort.Order.desc("transactionDate"), Sort.Order.desc("id")));
         LocalDate from = LocalDate.of(2026,10,31);
         LocalDate to = LocalDate.of(2026,10,15);
-        when(transactionService.getTransactions(null, from, to, pageable)).thenThrow(IllegalArgumentException.class);
+        when(transactionService.getTransactions(null, from, to, pageable)).thenThrow(new IllegalArgumentException("Invalid date range"));
         //when
         mockMvc.perform(get("/api/transactions")
                         .param("from", "2026-10-31")
@@ -322,7 +344,11 @@ class TransactionControllerTest {
                         .param("page","0")
                         .param("size", "2"))
                 //then
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid date range"))
+                .andExpect(jsonPath("$.path").value("/api/transactions"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verify(transactionService).getTransactions(null, from, to, pageable);
     }
     @Test
@@ -598,7 +624,13 @@ class TransactionControllerTest {
                         .param("page","-1")
                         .param("size", "3"))
                 //then
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message")
+                        .value("Invalid pagination parameters"))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/transactions"))
+                .andExpect(jsonPath("$.timestamp").exists());
         verifyNoInteractions(transactionService);
 
     }

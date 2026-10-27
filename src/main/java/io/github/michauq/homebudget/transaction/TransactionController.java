@@ -60,7 +60,10 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> getTransaction(@PathVariable Long id){
         return transactionService.getTransaction(id)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Transaction with id " + id + " not found"
+                ));
     }
 
 
@@ -107,19 +110,19 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> updateTransaction(@PathVariable Long id, @Valid @RequestBody CreateTransactionRequest request){
         return transactionService.updateTransaction(id,request)
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Transaction with id " + id + " not found"
+                ));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
         boolean deleted = transactionService.deleteTransaction(id);
-        if (deleted){
-            return ResponseEntity.noContent().build();
+        if (!deleted){
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Transaction with id " + id + " not found");
         }
-        return ResponseEntity.notFound().build();
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public void handleIllegalArgumentException() {
+        return ResponseEntity.noContent().build();
     }
 }
