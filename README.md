@@ -97,3 +97,36 @@ Returns the total amount of expenses grouped by transaction category.
     }
 ]
 ```
+
+## Error Handling
+
+The API uses centralized exception handling to provide consistent error responses for invalid requests and missing resources.
+
+### Error Response Format
+
+For most request errors, the API returns a JSON response with the following structure:
+
+```json
+{
+  "timestamp": "2026-10-27T17:13:41Z",
+  "status": 400,
+  "message": "Invalid value for parameter: date",
+  "path": "/api/transactions"
+}
+```
+
+| Field         | Description                          |
+|---------------|--------------------------------------|
+| `timestamp`   | Time when the error occurred (UTC).  |
+| `status`      | HTTP status code.                    |
+| `message`     | Description of the error.            |
+| `path`        | Request path that caused the error.  |
+
+### Supported Error Responses
+
+| HTTP Status        | Description                                                                    |
+|--------------------|--------------------------------------------------------------------------------|
+| `400 Bad Request`  | Invalid query parameters, incorrect date ranges, or invalid request arguments. |
+| `404 Not Found`    | Requested transaction does not exist.                                          |
+
+**Note:** Bean Validation errors use a separate response format containing field-specific validation messages.
